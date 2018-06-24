@@ -94,6 +94,7 @@ from sage.rings.all import PolynomialRing, ZZ, QQ, RealField, Integer
 from sage.misc.all import cached_method, verbose, prod, union, flatten
 from six import reraise as raise_
 
+
 class EllipticCurve_number_field(EllipticCurve_field):
     r"""
     Elliptic curve over a number field.
@@ -104,6 +105,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
         sage: EllipticCurve([i, i - 1, i + 1, 24*i + 15, 14*i + 35])
         Elliptic Curve defined by y^2 + i*x*y + (i+1)*y = x^3 + (i-1)*x^2 + (24*i+15)*x + (14*i+35) over Number Field in i with defining polynomial x^2 + 1
     """
+
     def __init__(self, K, ainvs):
         r"""
         EXAMPLES:
@@ -150,11 +152,20 @@ class EllipticCurve_number_field(EllipticCurve_field):
         """
         E = super(EllipticCurve_number_field, self).base_extend(R)
         if isinstance(E, EllipticCurve_number_field):
-            E._known_points = [E([R(_) for _ in P.xy()]) for P in self._known_points if not P.is_zero()]
+            E._known_points = [
+                E([R(_) for _ in P.xy()]) for P in self._known_points
+                if not P.is_zero()
+            ]
         return E
 
-    def simon_two_descent(self, verbose=0, lim1=2, lim3=4, limtriv=2,
-                          maxprob=20, limbigprime=30, known_points=None):
+    def simon_two_descent(self,
+                          verbose=0,
+                          lim1=2,
+                          lim3=4,
+                          limtriv=2,
+                          maxprob=20,
+                          limbigprime=30,
+                          known_points=None):
         r"""
         Return lower and upper bounds on the rank of the Mordell-Weil
         group `E(K)` and a list of points.
@@ -313,7 +324,8 @@ class EllipticCurve_number_field(EllipticCurve_field):
         # time (when known_points may have increased) will not cause
         # another execution of simon_two_descent.
         try:
-            result = self._simon_two_descent_data[lim1,lim3,limtriv,maxprob,limbigprime]
+            result = self._simon_two_descent_data[lim1, lim3, limtriv, maxprob,
+                                                  limbigprime]
             if verbose == 0:
                 return result
         except AttributeError:
@@ -322,23 +334,29 @@ class EllipticCurve_number_field(EllipticCurve_field):
             pass
 
         from .gp_simon import simon_two_descent
-        t = simon_two_descent(self, verbose=verbose,
-                              lim1=lim1, lim3=lim3, limtriv=limtriv,
-                              maxprob=maxprob, limbigprime=limbigprime,
-                              known_points=known_points)
-        self._simon_two_descent_data[lim1,lim3,limtriv,maxprob,limbigprime] = t
-        self._known_points.extend([P for P in t[2]
-                                   if P not in self._known_points])
+        t = simon_two_descent(
+            self,
+            verbose=verbose,
+            lim1=lim1,
+            lim3=lim3,
+            limtriv=limtriv,
+            maxprob=maxprob,
+            limbigprime=limbigprime,
+            known_points=known_points)
+        self._simon_two_descent_data[lim1, lim3, limtriv, maxprob,
+                                     limbigprime] = t
+        self._known_points.extend(
+            [P for P in t[2] if P not in self._known_points])
         return t
 
-    def division_field(self, p, names, map=False, **kwds):
+    def division_field(self, n, names, map=False, **kwds):
         """
-        Given an elliptic curve over a number field `F` and a prime number `p`,
-        construct the field `F(E[p])`.
+        Given an elliptic curve over a number field `F` and a natural number `n`,
+        construct the field `F(E[n])`.
 
         INPUT:
 
-        - ``p`` -- a prime number (an element of `\ZZ`)
+        - ``n`` -- a natural number (an element of `\ZZ`)
 
         - ``names`` -- a variable name for the number field
 
@@ -357,7 +375,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
         .. WARNING::
 
             This takes a very long time when the degree of the division
-            field is large (e.g. when `p` is large or when the Galois
+            field is large (e.g. when `n` is large or when the Galois
             representation is surjective).  The ``simplify`` flag also
             has a big influence on the running time: sometimes
             ``simplify=False`` is faster, sometimes ``simplify=True``
@@ -435,6 +453,21 @@ class EllipticCurve_number_field(EllipticCurve_field):
             sage: K.<b> = E.division_field(7); K  # long time (8s on sage.math, 2014)
             Number Field in b with defining polynomial x^72 ...
 
+        Some composite examples::
+
+            sage: E = EllipticCurve('14a1')
+            sage: K.<b> = E.division_field(6)
+            sage: E.base_extend(K).torsion_subgroup().invariants()
+            (6, 6)
+            sage: E = EllipticCurve('15a1')
+            sage: K.<b> = E.division_field(4)
+            sage: E.base_extend(K).torsion_subgroup().invariants()
+            (4, 4)
+            sage: E = EllipticCurve('17a1')
+            sage: K.<b> = E.division_field(4)
+            sage: E.base_extend(K).torsion_subgroup().invariants()
+            (4, 4)
+
         Over a number field::
 
             sage: R.<x> = PolynomialRing(QQ)
@@ -462,64 +495,100 @@ class EllipticCurve_number_field(EllipticCurve_field):
           ``splitting_field`` method, moved from ``gal_reps.py``, make
           it work over number fields.
         """
-        p = Integer(p)
-        if not p.is_prime():
-            raise ValueError("p must be a prime number")
+        n = Integer(n)
+        if not n > 0:
+            raise ValueError("n must be a natural number greater than 0")
 
-        verbose("Adjoining X-coordinates of %s-torsion points"%p)
         F = self.base_ring()
-        f = self.division_polynomial(p)
-        if p == 2:
-            # For p = 2, the division field is the splitting field of
-            # the division polynomial.
-            return f.splitting_field(names, map=map, **kwds)
+        if n == 1:
+            L = F.change_names(name)
+            if map:
+                return L, L.hom(L)
+            else:
+                return L
 
-        # Compute splitting field of X-coordinates.
-        # The Galois group of the division field is a subgroup of GL(2,p).
-        # The Galois group of the X-coordinates is a subgroup of GL(2,p)/{-1,+1}.
-        # We need the map to change the elliptic curve invariants to K.
-        deg_mult = F.degree()*p*(p+1)*(p-1)*(p-1)//2
-        K, F_to_K = f.splitting_field(names, degree_multiple=deg_mult, map=True, **kwds)
+        # Compute the division field K(E[p^e]) for each p-primary part and
+        # store the result.
+        Ls = []
+        for p, e in n.factor():
+            verbose("Adjoining X-coordinates of %s-primary torsion points" % p)
+            F = self.base_ring()
+            f = self.division_polynomial(p**e)
 
-        verbose("Adjoining Y-coordinates of %s-torsion points"%p)
+            if p**e == 2:
+                # For n = 2, the division field is the splitting field of
+                # the division polynomial.
+                f = self.division_polynomial(p**e)
+                Ls.append(f.splitting_field(names, map=map, **kwds))
+                continue
 
-        # THEOREM (Cremona, http://trac.sagemath.org/ticket/11905#comment:21).
-        # Let K be a field, E an elliptic curve over K and p an odd
-        # prime number. Assume that K contains all roots of the
-        # p-division polynomial of E. Then either K contains all
-        # p-torsion points on E, or it doesn't contain any p-torsion
-        # point.
-        #
-        # PROOF. Let G be the absolute Galois group of K (every element
-        # in it fixes all elements of K). For any p-torsion point P
-        # over the algebraic closure and any sigma in G, we must have
-        # either sigma(P) = P or sigma(P) = -P (since K contains the
-        # X-coordinate of P). Now assume that K does not contain all
-        # p-torsion points. Then there exists a point P1 and a sigma in
-        # G such that sigma(P1) = -P1. Now take a different p-torsion
-        # point P2. Since sigma(P2) must be P2 or -P2 and
-        # sigma(P1+P2) = sigma(P1)+sigma(P2) = sigma(P1)-P2 must
-        # be P1+P2 or -(P1+P2), it follows that sigma(P2) = -sigma(P2).
-        # Therefore, K cannot contain any p-torsion point.
-        #
-        # This implies that it suffices to adjoin the Y-coordinate
-        # of just one point.
+            # Compute splitting field of X-coordinates.
+            # The Galois group of the division field is a subgroup of GL(2,p^e).
+            # The Galois group of the X-coordinates is a subgroup of GL(2,p^e)/{-1,+1}.
+            # We need the map to change the elliptic curve invariants to K.
+            deg_mult = F.degree() * (p**2 - 1) * (p**2 - p) * (p**
+                                                               (4 * (e - 1)))
+            K, F_to_K = f.splitting_field(
+                names, degree_multiple=deg_mult, map=True, **kwds)
 
-        # First factor f over F and then compute a root X of f over K.
-        g = f.factor()[0][0]
-        X = g.map_coefficients(F_to_K).roots(multiplicities=False)[0]
+            verbose("Adjoining Y-coordinates of %s-primary torsion points" % p)
 
-        # Polynomial defining the corresponding Y-coordinate
-        a1,a2,a3,a4,a6 = (F_to_K(ai) for ai in self.a_invariants())
-        rhs = X*(X*(X + a2) + a4) + a6
-        RK = PolynomialRing(K, 'x')
-        ypol = RK([-rhs, a1*X + a3, 1])
-        L = ypol.splitting_field(names, map=map, **kwds)
+            # THEOREM (Cremona, http://trac.sagemath.org/ticket/11905#comment:21).
+            # Let K be a field, E an elliptic curve over K and q=p^e a prime
+            # power. Assume that K contains all roots of the
+            # q-division polynomial of E. Then if K contains a q-torsion point
+            # that is not a 2-torsion point, K contains all q-torsion points.
+            #
+            # PROOF. Let G be the absolute Galois group of K (every element
+            # in it fixes all elements of K). For any q-torsion point P
+            # over the algebraic closure and any sigma in G, we must have
+            # either sigma(P) = P or sigma(P) = -P (since K contains the
+            # X-coordinate of P). Now assume that K contains a q-torsion point
+            # P1 that is not a 2-torsion point. Take a different q-torsion
+            # point P2. The goal is to show sigma(P2)=P2 for any sigma in G.
+            # Let sigma be any element of G. We know that sigma(P1)=P1 and
+            # sigma(P1+P2)=P1+P2 or -(P1+P2). Assume sigma(P1+P2)=P1+P2. Then
+            # P1+sigma(P2)=sigma(P1+P2)=P1+P2 so sigma(P2)=P2. Now assume
+            # P1+sigma(P2)=sigma(P1+P2)=-(P1+P2). After rearranging,
+            # 2*P1=-sigma(P2)-P2. Since P1 is not 2-torsion, the left hand side
+            # is nonzero so sigma(P2)=P2.
+            #
+            # This implies that it suffices to adjoin the Y-coordinate
+            # of just one point that is not 2-torsion.
+
+            # First factor f over F and then compute a root X of f over K
+            g = next(q[0] for q in f.factor()
+                     if not q[0].divides(self.division_polynomial(2)))
+            X = g.map_coefficients(F_to_K).roots(multiplicities=False)[0]
+
+            # Polynomial defining the corresponding Y-coordinate
+            a1, a2, a3, a4, a6 = (F_to_K(ai) for ai in self.a_invariants())
+            rhs = X * (X * (X + a2) + a4) + a6
+            RK = PolynomialRing(K, 'x')
+            ypol = RK([-rhs, a1 * X + a3, 1])
+            L = ypol.splitting_field(names, map=map, **kwds)
+            if map:
+                L, K_to_L = L
+                Ls.append((L, F_to_K.post_compose(K_to_L)))
+            else:
+                Ls.append(L)
+
+        # Form composite field of all p-primary parts
         if map:
-            L, K_to_L = L
-            return L, F_to_K.post_compose(K_to_L)
+            accum = Ls[0][0]
+            F_to_accum = Ls[0][1]
+            for L, F_to_L in Ls[1:]:
+                newF, accum_to_newF = accum.composite_fields(
+                    L, both_maps=True, names=names)[:2]
+                accum, F_to_accum = newF, F_to_accum.post_compose(
+                    accum_to_newF)
+            return accum, F_to_accum
         else:
-            return L
+            accum = Ls[0]
+            for L in Ls[1:]:
+                accum = accum.composite_fields(
+                    L, both_maps=False, names=names)[0]
+            return accum
 
     def height_pairing_matrix(self, points=None, precision=None):
         r"""
@@ -593,11 +662,13 @@ class EllipticCurve_number_field(EllipticCurve_field):
         M = MatrixSpace(RR, r)
         mat = M()
         for j in range(r):
-            mat[j,j] = points[j].height(precision=precision)
+            mat[j, j] = points[j].height(precision=precision)
         for j in range(r):
-            for k in range(j+1,r):
-                mat[j,k]=((points[j]+points[k]).height(precision=precision) - mat[j,j] - mat[k,k])/2
-                mat[k,j]=mat[j,k]
+            for k in range(j + 1, r):
+                mat[j, k] = (
+                    (points[j] + points[k]).height(precision=precision) -
+                    mat[j, j] - mat[k, k]) / 2
+                mat[k, j] = mat[j, k]
         return mat
 
     def regulator_of_points(self, points=[], precision=None):
@@ -701,8 +772,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
         mat = self.height_pairing_matrix(points=points, precision=precision)
         return mat.det(algorithm="hessenberg")
 
-
-    def is_local_integral_model(self,*P):
+    def is_local_integral_model(self, *P):
         r"""
         Tests if self is integral at the prime ideal `P`, or at all the
         primes if `P` is a list or tuple.
@@ -728,7 +798,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
             return all(self.is_local_integral_model(x) for x in P)
         return all(x.valuation(P) >= 0 for x in self.ainvs())
 
-    def local_integral_model(self,*P):
+    def local_integral_model(self, *P):
         r"""
         Return a model of self which is integral at the prime ideal
         `P`.
@@ -750,15 +820,18 @@ class EllipticCurve_number_field(EllipticCurve_field):
             sage: E.local_integral_model((P1,P2))
             Elliptic Curve defined by y^2 + (-i)*x*y + (-25*i)*y = x^3 + 5*i*x^2 + 125*i*x + 3125*i over Number Field in i with defining polynomial x^2 + 1
         """
-        if len(P) == 1: P=P[0]
-        if isinstance(P,(tuple,list)):
-            E=self
-            for Pi in P: E=E.local_integral_model(Pi)
+        if len(P) == 1: P = P[0]
+        if isinstance(P, (tuple, list)):
+            E = self
+            for Pi in P:
+                E = E.local_integral_model(Pi)
             return E
         ai = self.a_invariants()
-        e  = min([(ai[i].valuation(P)/[1,2,3,4,6][i]) for i in range(5)]).floor()
+        e = min([(ai[i].valuation(P) / [1, 2, 3, 4, 6][i])
+                 for i in range(5)]).floor()
         pi = self.base_field().uniformizer(P, 'negative')
-        return EllipticCurve([ai[i]/pi**(e*[1,2,3,4,6][i]) for i in range(5)])
+        return EllipticCurve(
+            [ai[i] / pi**(e * [1, 2, 3, 4, 6][i]) for i in range(5)])
 
     def is_global_integral_model(self):
         r"""
@@ -820,17 +893,20 @@ class EllipticCurve_number_field(EllipticCurve_field):
         """
         K = self.base_field()
         ai = self.a_invariants()
-        Ps = [[ ff[0] for ff in a.denominator_ideal().factor() ] for a in ai if not a.is_integral() ]
+        Ps = [[ff[0] for ff in a.denominator_ideal().factor()] for a in ai
+              if not a.is_integral()]
         Ps = union(flatten(Ps))
         for P in Ps:
-            pi = K.uniformizer(P,'positive')
-            e  = min([(ai[i].valuation(P)/[1,2,3,4,6][i]) for i in range(5)]).floor()
-            if e < 0 :
-                ai = [ai[i]/pi**(e*[1,2,3,4,6][i]) for i in range(5)]
+            pi = K.uniformizer(P, 'positive')
+            e = min([(ai[i].valuation(P) / [1, 2, 3, 4, 6][i])
+                     for i in range(5)]).floor()
+            if e < 0:
+                ai = [ai[i] / pi**(e * [1, 2, 3, 4, 6][i]) for i in range(5)]
             if all(a.is_integral() for a in ai):
                 break
         for z in ai:
-            assert z.is_integral(), "bug in global_integral_model: %s" % list(ai)
+            assert z.is_integral(
+            ), "bug in global_integral_model: %s" % list(ai)
         return EllipticCurve(list(ai))
 
     integral_model = global_integral_model
@@ -882,18 +958,19 @@ class EllipticCurve_number_field(EllipticCurve_field):
             (a1, a2, a3, a4, a6) = [ZK(a) for a in self.a_invariants()]
         except TypeError:
             import sys
-            raise_(TypeError, "_reduce_model() requires an integral model.", sys.exc_info()[2])
+            raise_(TypeError, "_reduce_model() requires an integral model.",
+                   sys.exc_info()[2])
 
         # N.B. Must define s, r, t in the right order.
         if ZK.absolute_degree() == 1:
-            s = ((-a1)/2).round('up')
-            r = ((-a2 + s*a1 +s*s)/3).round()
-            t = ((-a3 - r*a1)/2).round('up')
+            s = ((-a1) / 2).round('up')
+            r = ((-a2 + s * a1 + s * s) / 3).round()
+            t = ((-a3 - r * a1) / 2).round('up')
         else:
             pariK = K.__pari__()
             s = K(pariK.nfeltdiveuc(-a1, 2))
-            r = K(pariK.nfeltdiveuc(-a2 + s*a1 + s*s, 3))
-            t = K(pariK.nfeltdiveuc(-a3 - r*a1, 2))
+            r = K(pariK.nfeltdiveuc(-a2 + s * a1 + s * s, 3))
+            t = K(pariK.nfeltdiveuc(-a3 - r * a1, 2))
 
         return self.rst_transform(r, s, t)
 
@@ -943,25 +1020,27 @@ class EllipticCurve_number_field(EllipticCurve_field):
         """
         K = self.base_field()
         r1, r2 = K.signature()
-        if r1+r2 == 1: # unit rank is 0
+        if r1 + r2 == 1:  # unit rank is 0
             return self
 
         prec = 1000  # lower precision works badly!
         embs = K.places(prec=prec)
-        degs = [1]*r1 + [2]*r2
+        degs = [1] * r1 + [2] * r2
         fu = K.units()
         from sage.matrix.all import Matrix
-        U = Matrix([[e(u).abs().log()*d for d,e in zip(degs,embs)] for u in fu])
-        A = U*U.transpose()
+        U = Matrix(
+            [[e(u).abs().log() * d for d, e in zip(degs, embs)] for u in fu])
+        A = U * U.transpose()
         Ainv = A.inverse()
 
         c4, c6 = self.c_invariants()
         c4s = [e(c4) for e in embs]
         c6s = [e(c6) for e in embs]
         from sage.modules.all import vector
-        v = vector([(x4.abs().nth_root(4)+x6.abs().nth_root(6)).log()*d for x4,x6,d in zip(c4s,c6s,degs)])
-        es = [e.round() for e in -Ainv*U*v]
-        u = prod([uj**ej for uj,ej in zip(fu,es)])
+        v = vector([(x4.abs().nth_root(4) + x6.abs().nth_root(6)).log() * d
+                    for x4, x6, d in zip(c4s, c6s, degs)])
+        es = [e.round() for e in -Ainv * U * v]
+        u = prod([uj**ej for uj, ej in zip(fu, es)])
         return self.scale_curve(u)
 
     def local_data(self, P=None, proof=None, algorithm="pari", globally=False):
@@ -1057,13 +1136,14 @@ class EllipticCurve_number_field(EllipticCurve_field):
             proof = sage.structure.proof.proof.get_flag(None, "number_field")
 
         if P is None:
-            primes = self.base_ring()(self.integral_model().discriminant()).support()
+            primes = self.base_ring()(
+                self.integral_model().discriminant()).support()
             return [self._get_local_data(pr, proof) for pr in primes]
 
         from sage.schemes.elliptic_curves.ell_local_data import check_prime
-        P = check_prime(self.base_field(),P)
+        P = check_prime(self.base_field(), P)
 
-        return self._get_local_data(P,proof,algorithm,globally)
+        return self._get_local_data(P, proof, algorithm, globally)
 
     def _get_local_data(self, P, proof, algorithm="pari", globally=False):
         r"""
@@ -1124,10 +1204,12 @@ class EllipticCurve_number_field(EllipticCurve_field):
         except KeyError:
             pass
         from sage.schemes.elliptic_curves.ell_local_data import EllipticCurveLocalData
-        self._local_data[P, proof, algorithm, globally] = EllipticCurveLocalData(self, P, proof, algorithm, globally)
+        self._local_data[P, proof, algorithm,
+                         globally] = EllipticCurveLocalData(
+                             self, P, proof, algorithm, globally)
         return self._local_data[P, proof, algorithm, globally]
 
-    def local_minimal_model(self, P, proof = None, algorithm="pari"):
+    def local_minimal_model(self, P, proof=None, algorithm="pari"):
         r"""
         Returns a model which is integral at all primes and minimal at `P`.
 
@@ -1360,7 +1442,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
         """
         return self.local_data(P).has_additive_reduction()
 
-    def tamagawa_number(self, P, proof = None):
+    def tamagawa_number(self, P, proof=None):
         r"""
         Returns the Tamagawa number of this elliptic curve at the prime `P`.
 
@@ -1412,9 +1494,11 @@ class EllipticCurve_number_field(EllipticCurve_field):
             sage: eK.tamagawa_numbers()
             [4, 6, 1]
         """
-        return [self.tamagawa_number(p) for p in self.conductor().prime_factors()]
+        return [
+            self.tamagawa_number(p) for p in self.conductor().prime_factors()
+        ]
 
-    def tamagawa_exponent(self, P, proof = None):
+    def tamagawa_exponent(self, P, proof=None):
         r"""
         Returns the Tamagawa index of this elliptic curve at the prime `P`.
 
@@ -1511,11 +1595,11 @@ class EllipticCurve_number_field(EllipticCurve_field):
                 p = pp.smallest_integer()
                 f = pp.residue_class_degree()
                 v = uu.valuation(pp)
-            uu_abs_val = p**(f*v)
+            uu_abs_val = p**(f * v)
             pr *= cv * uu_abs_val
         return pr
 
-    def kodaira_symbol(self, P, proof = None):
+    def kodaira_symbol(self, P, proof=None):
         r"""
         Returns the Kodaira Symbol of this elliptic curve at the prime `P`.
 
@@ -1551,7 +1635,6 @@ class EllipticCurve_number_field(EllipticCurve_field):
             proof = sage.structure.proof.proof.get_flag(None, "number_field")
 
         return self.local_data(P, proof).kodaira_symbol()
-
 
     def conductor(self):
         r"""
@@ -1704,14 +1787,15 @@ class EllipticCurve_number_field(EllipticCurve_field):
             ValueError: non_minimal_primes only defined for integral models
         """
         if not self.is_global_integral_model():
-            raise ValueError("non_minimal_primes only defined for integral models")
+            raise ValueError(
+                "non_minimal_primes only defined for integral models")
         dat = self.local_data()
         D = self.discriminant()
         primes = [d.prime() for d in dat]
         if self.base_field() is QQ:
             primes = [P.gen() for P in primes]
         vals = [d.discriminant_valuation() for d in dat]
-        return [P for P,v in zip(primes,vals) if D.valuation(P) > v]
+        return [P for P, v in zip(primes, vals) if D.valuation(P) > v]
 
     def is_global_minimal_model(self):
         r"""
@@ -1813,8 +1897,9 @@ class EllipticCurve_number_field(EllipticCurve_field):
         dat = self.local_data()
         primes = [d.prime() for d in dat]
         vals = [d.discriminant_valuation() for d in dat]
-        I = prod([P**((D.valuation(P)-v)//12) for P,v in zip(primes,vals)],
-                 K.ideal(1))
+        I = prod(
+            [P**((D.valuation(P) - v) // 12) for P, v in zip(primes, vals)],
+            K.ideal(1))
         return Cl(I)
 
     def has_global_minimal_model(self):
@@ -1837,7 +1922,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
         """
         return self.global_minimality_class().is_one()
 
-    def global_minimal_model(self, proof = None, semi_global=False):
+    def global_minimal_model(self, proof=None, semi_global=False):
         r"""
         Returns a model of self that is integral, and minimal.
 
@@ -1960,16 +2045,18 @@ class EllipticCurve_number_field(EllipticCurve_field):
             if self.base_ring().class_number() == 1:
                 E = self.global_integral_model()
                 for P in E.base_ring()(E.discriminant()).support():
-                    E = E.local_data(P,proof, globally=True).minimal_model()
+                    E = E.local_data(P, proof, globally=True).minimal_model()
             else:
                 from .kraus import semi_global_minimal_model
                 E, P = semi_global_minimal_model(self)
             return E._scale_by_units()._reduce_model()
 
-        raise ValueError("%s has no global minimal model!  For a semi-global minimal model use semi_global=True" % self)
+        raise ValueError(
+            "%s has no global minimal model!  For a semi-global minimal model use semi_global=True"
+            % self)
 
-    def reduction(self,place):
-       r"""
+    def reduction(self, place):
+        r"""
        Return the reduction of the elliptic curve at a place of good reduction.
 
        INPUT:
@@ -2000,25 +2087,28 @@ class EllipticCurve_number_field(EllipticCurve_field):
            sage: E.reduction(2*K)
            Elliptic Curve defined by y^2 + (abar+1)*y = x^3 over Residue field in abar of Fractional ideal (2)
        """
-       K = self.base_field()
-       OK = K.ring_of_integers()
-       try:
-           place = K.ideal(place)
-       except TypeError:
-           raise TypeError("The parameter must be an ideal of the base field of the elliptic curve")
-       if not place.is_prime():
-           raise ValueError("The ideal must be prime.")
-       disc = self.discriminant()
-       if not K.ideal(disc).valuation(place) == 0:
-           local_data=self.local_data(place)
-           if local_data.has_good_reduction():
-               Fv = OK.residue_field(place)
-               return local_data.minimal_model().change_ring(Fv)
-           raise ValueError("The curve must have good reduction at the place.")
-       Fv = OK.residue_field(place)
-       return self.change_ring(Fv)
+        K = self.base_field()
+        OK = K.ring_of_integers()
+        try:
+            place = K.ideal(place)
+        except TypeError:
+            raise TypeError(
+                "The parameter must be an ideal of the base field of the elliptic curve"
+            )
+        if not place.is_prime():
+            raise ValueError("The ideal must be prime.")
+        disc = self.discriminant()
+        if not K.ideal(disc).valuation(place) == 0:
+            local_data = self.local_data(place)
+            if local_data.has_good_reduction():
+                Fv = OK.residue_field(place)
+                return local_data.minimal_model().change_ring(Fv)
+            raise ValueError(
+                "The curve must have good reduction at the place.")
+        Fv = OK.residue_field(place)
+        return self.change_ring(Fv)
 
-    def _torsion_bound(self,number_of_places = 20):
+    def _torsion_bound(self, number_of_places=20):
         r"""
         An upper bound on the order of the torsion subgroup.
 
@@ -2064,7 +2154,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
         disc = E.discriminant()
         p = Integer(1)
         # runs through primes, decomposes them into prime ideals
-        while k < number_of_places :
+        while k < number_of_places:
             p = p.next_prime()
             f = K.primes_above(p)
             # runs through prime ideals above p
@@ -2073,9 +2163,11 @@ class EllipticCurve_number_field(EllipticCurve_field):
                 charqq = qq.smallest_integer()
                 # take only places with small residue field (so that the
                 # number of points will be small)
-                if fqq == 1 or charqq**fqq < 3*number_of_places:
+                if fqq == 1 or charqq**fqq < 3 * number_of_places:
                     # check if the model is integral at the place
-                    if min([K.ideal(a).valuation(qq) for a in E.a_invariants()]) >= 0:
+                    if min(
+                        [K.ideal(a).valuation(qq)
+                         for a in E.a_invariants()]) >= 0:
                         eqq = qq.absolute_ramification_index()
                         # check if the formal group at the place is torsion-free
                         # if so the torsion injects into the reduction
@@ -2250,8 +2342,8 @@ class EllipticCurve_number_field(EllipticCurve_field):
             sage: EK.torsion_points ()
              [(-2 : -3*i : 1), (-2 : 3*i : 1), (0 : -i : 1), (0 : i : 1), (0 : 1 : 0), (1 : 0 : 1)]
          """
-        T = self.torsion_subgroup() # cached
-        return sorted(T.points())           # these are also cached in T
+        T = self.torsion_subgroup()  # cached
+        return sorted(T.points())  # these are also cached in T
 
     def rank_bounds(self, **kwds):
         r"""
@@ -2405,7 +2497,9 @@ class EllipticCurve_number_field(EllipticCurve_field):
         if lower == upper:
             return lower
         else:
-            raise ValueError('There is insufficient data to determine the rank - 2-descent gave lower bound %s and upper bound %s' % (lower, upper))
+            raise ValueError(
+                'There is insufficient data to determine the rank - 2-descent gave lower bound %s and upper bound %s'
+                % (lower, upper))
 
     def gens(self, **kwds):
         r"""
@@ -2563,7 +2657,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
             (1.8640500764798108425920506200 - 0.90376148514322594749786960975*I, -0.14934463314391922099120107422 - 2.0661954627294548995621225062*I)
         """
         from sage.schemes.elliptic_curves.period_lattice import PeriodLattice_ell
-        return PeriodLattice_ell(self,embedding)
+        return PeriodLattice_ell(self, embedding)
 
     def height_function(self):
         """
@@ -2975,15 +3069,18 @@ class EllipticCurve_number_field(EllipticCurve_field):
             L = possible_isogeny_degrees(self)
             return self.isogenies_prime_degree(L)
 
-        isogs = sum([self.isogenies_prime_degree(p) for p in l],[])
+        isogs = sum([self.isogenies_prime_degree(p) for p in l], [])
 
         if self.has_rational_cm():
             # eliminate any endomorphisms and repeated codomains
-            isogs = [phi for phi in isogs if not self.is_isomorphic(phi.codomain())]
+            isogs = [
+                phi for phi in isogs if not self.is_isomorphic(phi.codomain())
+            ]
             codoms = [phi.codomain() for phi in isogs]
-            isogs = [phi for i, phi in enumerate(isogs)
-                     if not any([E.is_isomorphic(codoms[i])
-                                 for E in codoms[:i]])]
+            isogs = [
+                phi for i, phi in enumerate(isogs)
+                if not any([E.is_isomorphic(codoms[i]) for E in codoms[:i]])
+            ]
         return isogs
 
     def is_isogenous(self, other, proof=True, maxnorm=100):
@@ -3111,7 +3208,8 @@ class EllipticCurve_number_field(EllipticCurve_field):
             return True
         K = self.base_field()
         if K != other.base_field():
-            raise ValueError("Second argument must be defined over the same number field.")
+            raise ValueError(
+                "Second argument must be defined over the same number field.")
 
         E1 = self.integral_model()
         E2 = other.integral_model()
@@ -3124,7 +3222,8 @@ class EllipticCurve_number_field(EllipticCurve_field):
             P = next(PI)
             if P.absolute_norm() > maxnorm: break
             if not P.divides(N):
-                if E1.reduction(P).cardinality() != E2.reduction(P).cardinality():
+                if E1.reduction(P).cardinality() != E2.reduction(
+                        P).cardinality():
                     return False
 
         if not proof:
@@ -3132,8 +3231,11 @@ class EllipticCurve_number_field(EllipticCurve_field):
 
         #  We first try the easiest cases: primes for which X_0(l) has genus 0:
 
-        for l in [2,3,5,7,13]:
-            if any([E2.is_isomorphic(f.codomain()) for f in E1.isogenies_prime_degree(l)]):
+        for l in [2, 3, 5, 7, 13]:
+            if any([
+                    E2.is_isomorphic(f.codomain())
+                    for f in E1.isogenies_prime_degree(l)
+            ]):
                 return True
 
         #  Next we try the primes for which X_0^+(l) has genus 0 for
@@ -3141,16 +3243,20 @@ class EllipticCurve_number_field(EllipticCurve_field):
 
         from .isogeny_small_degree import hyperelliptic_primes
         for l in hyperelliptic_primes:
-            if any([E2.is_isomorphic(f.codomain()) for f in E1.isogenies_prime_degree(l)]):
+            if any([
+                    E2.is_isomorphic(f.codomain())
+                    for f in E1.isogenies_prime_degree(l)
+            ]):
                 return True
 
         # Next we try looking modulo some more primes:
 
         while True:
-            if P.absolute_norm() > 10*maxnorm: break
+            if P.absolute_norm() > 10 * maxnorm: break
             if not P.divides(N):
                 OP = K.residue_field(P)
-                if E1.change_ring(OP).cardinality() != E2.change_ring(OP).cardinality():
+                if E1.change_ring(OP).cardinality() != E2.change_ring(
+                        OP).cardinality():
                     return False
             P = next(PI)
 
@@ -3159,7 +3265,9 @@ class EllipticCurve_number_field(EllipticCurve_field):
 
         return any([E2.is_isomorphic(E3) for E3 in E1.isogeny_class().curves])
 
-        raise NotImplementedError("Curves appear to be isogenous (same conductor, isogenous modulo all primes of norm up to %s), but no isogeny has been constructed." % (10*maxnorm))
+        raise NotImplementedError(
+            "Curves appear to be isogenous (same conductor, isogenous modulo all primes of norm up to %s), but no isogeny has been constructed."
+            % (10 * maxnorm))
 
     def isogeny_degree(self, other):
         """
@@ -3209,7 +3317,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
             return Integer(1)
 
         C = self.isogeny_class()
-        i = C.index(self) # may not be 0 since curces are sorted
+        i = C.index(self)  # may not be 0 since curces are sorted
         try:
             return C.matrix()[i][C.index(other)]
         except ValueError:
@@ -3335,8 +3443,9 @@ class EllipticCurve_number_field(EllipticCurve_field):
         if height_matrix is None:
             height_matrix = self.height_pairing_matrix(points, precision)
         U = height_matrix.__pari__().lllgram().sage()
-        new_points = [sum([U[j, i]*points[j] for j in range(r)])
-                      for i in range(r)]
+        new_points = [
+            sum([U[j, i] * points[j] for j in range(r)]) for i in range(r)
+        ]
         return new_points, U
 
     def galois_representation(self):
@@ -3408,11 +3517,11 @@ class EllipticCurve_number_field(EllipticCurve_field):
             -108
         """
         from sage.schemes.elliptic_curves.cm import is_cm_j_invariant
-        flag, df =  is_cm_j_invariant(self.j_invariant())
+        flag, df = is_cm_j_invariant(self.j_invariant())
         if flag:
             d, f = df
-            return d*f**2
-        else: # no CM
+            return d * f**2
+        else:  # no CM
             return ZZ(0)
 
     @cached_method
@@ -3542,13 +3651,19 @@ class EllipticCurve_number_field(EllipticCurve_field):
         if self.base_field().embeddings(field):
             D = field(D)
             return D.is_square()
-        raise ValueError("Error in has_rational_cm: %s is not an extension field of %s"
-                         % (field,self.base_field()))
+        raise ValueError(
+            "Error in has_rational_cm: %s is not an extension field of %s" %
+            (field, self.base_field()))
 
-
-    def saturation(self, points, verbose=False,
-                   max_prime=0, one_prime=0, odd_primes_only=False,
-                   lower_ht_bound=None, reg=None, debug=False):
+    def saturation(self,
+                   points,
+                   verbose=False,
+                   max_prime=0,
+                   one_prime=0,
+                   odd_primes_only=False,
+                   lower_ht_bound=None,
+                   reg=None,
+                   debug=False):
         r"""
         Given a list of rational points on `E` over `K`, compute the
         saturation in `E(K)` of the subgroup they generate.
@@ -3696,7 +3811,6 @@ class EllipticCurve_number_field(EllipticCurve_field):
         if n == 0:
             return Plist, index, RealField()(1)
 
-
         # compute the list of primes p at which p-saturation is
         # required.
 
@@ -3713,10 +3827,10 @@ class EllipticCurve_number_field(EllipticCurve_field):
                 # TODO (robertb): verify this for rank > 1
                 if verbose:
                     print("Computing lower height bound..")
-                lower_ht_bound = self.height_function().min(.1, 5) ** n
+                lower_ht_bound = self.height_function().min(.1, 5)**n
                 if verbose:
                     print("..done: %s" % lower_ht_bound)
-            index_bound = (reg/lower_ht_bound).sqrt()
+            index_bound = (reg / lower_ht_bound).sqrt()
             prime_list = prime_range(index_bound.ceil() + 1)
             if verbose:
                 print("Testing primes up to %s" % prime_list[-1])
@@ -3724,7 +3838,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
             if one_prime:
                 prime_list = [one_prime]
             else:
-                prime_list = prime_range(max_prime+1)
+                prime_list = prime_range(max_prime + 1)
         if odd_primes_only and 2 in prime_list:
             prime_list.remove(2)
 
@@ -3742,7 +3856,7 @@ class EllipticCurve_number_field(EllipticCurve_field):
             newPlist, expo = full_p_saturation(Plist, p, lin_combs, verbose)
             if expo:
                 if verbose:
-                    print(" --gaining index %s^%s" % (p,expo))
+                    print(" --gaining index %s^%s" % (p, expo))
                 pe = p**expo
                 index *= pe
                 if full_saturation: index_bound /= pe
@@ -3753,7 +3867,6 @@ class EllipticCurve_number_field(EllipticCurve_field):
                     print(" --already %s-saturated" % p)
 
         return Plist, index, sat_reg
-
 
     def gens_quadratic(self, **kwds):
         """
@@ -3802,11 +3915,14 @@ class EllipticCurve_number_field(EllipticCurve_field):
 
         K = self.base_ring()
         if K.absolute_degree() != 2:
-            raise ValueError("gens_quadratic() requires the base field to be quadratic")
+            raise ValueError(
+                "gens_quadratic() requires the base field to be quadratic")
 
         EE = self.descend_to(QQ)
         if not EE:
-            raise ValueError("gens_quadratic() requires the elliptic curve to be a base change from Q")
+            raise ValueError(
+                "gens_quadratic() requires the elliptic curve to be a base change from Q"
+            )
 
         # In all cases there are exactly two distinct curves /Q whose
         # base-change to K is the original.  NB These need not be
@@ -3821,7 +3937,6 @@ class EllipticCurve_number_field(EllipticCurve_field):
         iso2 = EQ2.change_ring(K).isomorphism_to(self)
         gens1 = [iso1(P) for P in EQ1.gens(**kwds)]
         gens2 = [iso2(P) for P in EQ2.gens(**kwds)]
-        gens = self.saturation(gens1+gens2, max_prime=2)[0]
+        gens = self.saturation(gens1 + gens2, max_prime=2)[0]
         self.__gens = gens
         return gens
-
