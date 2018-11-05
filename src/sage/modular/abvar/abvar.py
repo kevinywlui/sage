@@ -3199,8 +3199,12 @@ class ModularAbelianVariety_abstract(ParentWithBase):
     def integer_degeneracy_coefficients(self):
         """
         Return the coefficients `a_i` so that self is the image of `\sum a_i
-        d_i|_{A_f}`, where `d_i`'s are the degeneracy maps and `A_f` is the
-        optimal subvariety isogenous to self.
+        d_i|_{A_f}`, where `d_i`'s are the degeneracy maps and `A_f\in
+        J(N)` is isogenous to `A` where `N` is the level of `f`.
+
+        Here we assume self is simple so such coefficients will always exist.
+        This is useful for constructing explicit isogenies to simple abelian
+        subvarieties of the old-subvariety.
 
         OUTPUT: an integer vector 
 
@@ -3211,18 +3215,33 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             sage: A = (d(1)-d(3)).image()
             sage: A.integer_degeneracy_coefficients()
             (1, -1)
+            sage: (d(1)-d(3)).image() == A
+            True
 
             sage: Af = J0(23)
             sage: d = lambda n: Af.degeneracy_map(2*23, n)
             sage: A = (4*d(1)-2*d(2)).image()
             sage: A.integer_degeneracy_coefficients()
             (-2, 1)
+            sage: (-2*d(1)+d(2)).image() == A
+            True
 
             sage: Af = J0(33)[2]
             sage: d = lambda n: Af.degeneracy_map(4*33, n)
             sage: A = (4*d(1)-2*d(2)+d(4)).image()
             sage: A.integer_degeneracy_coefficients() 
             (4, -2, 1)
+            sage: (4*d(1)-2*d(2)+d(4)).image() == A
+            True
+            
+            sage: X  = J0(33)
+            sage: d = lambda n: X.degeneracy_map(3*33, n)
+            sage: A = d(1).image().intersection(d(3).image())[1]
+            sage: A.integer_degeneracy_coefficients() 
+            (0, -1, 0)
+            sage: e = lambda n: J0(11).degeneracy_map(3*33, n)
+            sage: (-1*e(3)).image() == A
+            True
 
         """
         if not self.is_simple():
@@ -3260,9 +3279,9 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         # gives a vector of size d*t but we want a vector of size t. So we need
         # to compress by the dimension.
         sol = Ds.solve_left(v)
-        offset = next(c[0] for c in enumerate(sol) if c[1]) 
-        sol = vector(QQ, [sol[i*d+offset] for i in range(t)])
-        return vector(ZZ, sol * sol.denominator())
+        compressed = vector(QQ, next(sol[i::d] for i in range(t)))
+
+        return vector(ZZ, compressed * compressed.denominator())
         
 
 
