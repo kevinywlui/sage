@@ -51,7 +51,7 @@ from sage.modular.arithgroup.all import is_CongruenceSubgroup, is_Gamma0, is_Gam
 from sage.modular.modsym.all    import ModularSymbols
 from sage.modular.modsym.space  import ModularSymbolsSpace
 from sage.modular.modform.constructor  import Newform
-from sage.matrix.all            import matrix, block_diagonal_matrix, identity_matrix
+from sage.matrix.all            import matrix, block_diagonal_matrix, identity_matrix, block_matrix
 from sage.modules.all           import vector
 from sage.databases.cremona     import cremona_letter_code
 from sage.misc.all              import prod
@@ -3195,6 +3195,76 @@ class ModularAbelianVariety_abstract(ParentWithBase):
                 self.__degen_t = self.decomposition()[0].degen_t()
                 return self.__degen_t
             raise ValueError("self must be simple")
+
+    def integer_degeneracy_coefficients(self):
+        """
+        Return the coefficients `a_i` so that self is the image of `\sum a_i
+        d_i|_{A_f}`, where `d_i`'s are the degeneracy maps and `A_f` is the
+        optimal subvariety isogenous to self.
+
+        OUTPUT: an integer vector 
+
+        EXAMPLES:
+
+            sage: Af = J0(11)
+            sage: d = lambda n: Af.degeneracy_map(3*11, n)
+            sage: A = (d(1)-d(3)).image()
+            sage: A.integer_degeneracy_coefficients()
+            (1, -1)
+
+            sage: Af = J0(23)
+            sage: d = lambda n: Af.degeneracy_map(2*23, n)
+            sage: A = (4*d(1)-2*d(2)).image()
+            sage: A.integer_degeneracy_coefficients()
+            (-2, 1)
+
+            sage: Af = J0(33)[2]
+            sage: d = lambda n: Af.degeneracy_map(4*33, n)
+            sage: A = (4*d(1)-2*d(2)+d(4)).image()
+            sage: A.integer_degeneracy_coefficients() 
+            (4, -2, 1)
+
+        """
+        if not self.is_simple():
+            raise ValueError("self must be simple")
+        G = self.groups()[0]
+        if not (is_Gamma0(G) or is_Gamma1(G)):
+            raise NotImplementedError("""only implemented for subvarieties of J0
+                    or J1""")
+
+        N = self.level()
+        d = self.dimension()
+
+        # v is a single vector in the plus-subspace of the modular symbols
+        # attached to self. The goal is find a linear combination of degeneracy
+        # maps with v in the image.
+        S = ModularSymbols(G).cuspidal_subspace()
+        lifts = self.lattice().basis_matrix() * S.basis_matrix()
+        modsym = S.submodule(lifts.row_module(), check=False)
+        v = modsym.plus_submodule(compute_dual=False).gen(0).element()
+        
+        # Find plus-subspace corresponding to the optimal subvariety isogenous
+        # to self.
+        L, G = self.newform_level()
+        iso_num = self.isogeny_number()
+        S = ModularSymbols(G).plus_submodule() \
+                .cuspidal_submodule().new_submodule()[iso_num]
+
+        # Create a matrix consisting of stacked degeneracy maps.
+        divisors = Integer(N / L).divisors()
+        t = len(divisors)
+        Ms = [copy(S.degeneracy_map(N, div).matrix()) for div in divisors]
+        Ds = block_matrix(t, 1, Ms)
+
+        # Write v as a linear combination of rows of degeneracy maps. This
+        # gives a vector of size d*t but we want a vector of size t. So we need
+        # to compress by the dimension.
+        sol = Ds.solve_left(v)
+        offset = next(c[0] for c in enumerate(sol) if c[1]) 
+        sol = vector(QQ, [sol[i*d+offset] for i in range(t)])
+        return vector(ZZ, sol * sol.denominator())
+        
+
 
     def isogeny_number(self, none_if_not_known=False):
         """
