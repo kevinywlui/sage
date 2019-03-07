@@ -161,6 +161,7 @@ class Order(IntegralDomain):
         ...
         ValueError: the rank of the span of gens is wrong
     """
+
     def __init__(self, K, is_maximal):
         """
         This is called when creating an order to set the ambient field.
@@ -181,7 +182,8 @@ class Order(IntegralDomain):
         """
         self._K = K
         self._is_maximal = is_maximal
-        IntegralDomain.__init__(self, ZZ, names = K.variable_names(), normalize = False)
+        IntegralDomain.__init__(
+            self, ZZ, names=K.variable_names(), normalize=False)
         self._populate_coercion_lists_(embedding=self.number_field())
 
     def fractional_ideal(self, *args, **kwds):
@@ -231,10 +233,13 @@ class Order(IntegralDomain):
             Ideal (0) of Number Field in a with defining polynomial x^2 + 2
         """
         if not self.is_maximal():
-            raise NotImplementedError("ideals of non-maximal orders not yet supported.")
+            raise NotImplementedError(
+                "ideals of non-maximal orders not yet supported.")
         I = self.number_field().ideal(*args, **kwds)
         if not I.is_integral():
-            raise ValueError("ideal must be integral; use fractional_ideal to create a non-integral ideal.")
+            raise ValueError(
+                "ideal must be integral; use fractional_ideal to create a non-integral ideal."
+            )
         return I
 
     def _coerce_map_from_(self, R):
@@ -318,10 +323,11 @@ class Order(IntegralDomain):
 
         """
         if self._is_maximal is None:
-            self._is_maximal = (self.absolute_discriminant() == self._K.absolute_discriminant())
+            self._is_maximal = (self.absolute_discriminant() ==
+                                self._K.absolute_discriminant())
         return self._is_maximal
 
-    def is_field(self, proof = True):
+    def is_field(self, proof=True):
         r"""
         Return ``False`` (because an order is never a field).
 
@@ -518,9 +524,10 @@ class Order(IntegralDomain):
             M = self.__basis_matrix_inverse
         except AttributeError:
             from sage.matrix.constructor import Matrix
-            self.__basis_matrix_inverse = Matrix([to_V(b) for b in self.basis()]).inverse()
+            self.__basis_matrix_inverse = Matrix(
+                [to_V(b) for b in self.basis()]).inverse()
             M = self.__basis_matrix_inverse
-        return to_V(K(x))*M
+        return to_V(K(x)) * M
 
     def free_module(self):
         r"""
@@ -605,7 +612,7 @@ class Order(IntegralDomain):
             n.append(g.absolute_minpoly().degree())
             W = A.span([to_V(x) for x in monomials(gens, n)])
             remaining = [x for x in remaining if not to_V(x) in W]
-        return Sequence(gens,immutable=True)
+        return Sequence(gens, immutable=True)
 
     @cached_method
     def _defining_names(self):
@@ -645,17 +652,17 @@ class Order(IntegralDomain):
             ArithmeticError: There are no 3rd roots of unity in self.
         """
         roots_in_field = self.number_field().zeta(n, True)
-        roots_in_self = [ self(x) for x in roots_in_field if x in self ]
+        roots_in_self = [self(x) for x in roots_in_field if x in self]
         if len(roots_in_self) == 0:
             if all:
                 return []
             else:
-                raise ArithmeticError("There are no %s roots of unity in self."%n.ordinal_str())
+                raise ArithmeticError("There are no %s roots of unity in self."
+                                      % n.ordinal_str())
         if all:
             return roots_in_self
         else:
             return roots_in_self[0]
-
 
     def number_field(self):
         """
@@ -805,7 +812,9 @@ class Order(IntegralDomain):
         if not self.is_maximal():
             K = self.number_field()
             if K.degree() != 2:
-                raise NotImplementedError("computation of class numbers of non-maximal orders not in quadratic fields is not implemented")
+                raise NotImplementedError(
+                    "computation of class numbers of non-maximal orders not in quadratic fields is not implemented"
+                )
             return ZZ(pari.qfbclassno(self.discriminant()))
         return self.number_field().class_number(proof=proof)
 
@@ -1008,7 +1017,8 @@ class Order(IntegralDomain):
             sage: A.random_element().parent() is A
             True
         """
-        return sum([ZZ.random_element(*args, **kwds)*a for a in self.basis()])
+        return sum(
+            [ZZ.random_element(*args, **kwds) * a for a in self.basis()])
 
     def absolute_degree(self):
         r"""
@@ -1122,6 +1132,7 @@ class Order(IntegralDomain):
                 elements.append(self(a))
         return elements
 
+
 ##     def absolute_polynomial(self):
 ##         """
 ##         Returns the absolute polynomial of this order, which is just the absolute polynomial of the number field.
@@ -1158,8 +1169,8 @@ class Order(IntegralDomain):
 ##         """
 ##         return self.number_field().polynomial_ntl()
 
-class AbsoluteOrder(Order):
 
+class AbsoluteOrder(Order):
     def __init__(self, K, module_rep, is_maximal=None, check=True):
         """
         EXAMPLES::
@@ -1198,9 +1209,12 @@ class AbsoluteOrder(Order):
 
         if check:
             if not K.is_absolute():
-                raise ValueError("AbsoluteOrder must be called with an absolute number field.")
+                raise ValueError(
+                    "AbsoluteOrder must be called with an absolute number field."
+                )
             if to_v(1) not in module_rep:
-                raise ValueError("1 is not in the span of the module, hence not an order.")
+                raise ValueError(
+                    "1 is not in the span of the module, hence not an order.")
             if module_rep.rank() != self._K.degree():
                 raise ValueError("the module must have full rank.")
 
@@ -1237,7 +1251,7 @@ class AbsoluteOrder(Order):
         if is_Element(x) and x.parent() is self:
             return x
         if isinstance(x, (tuple, list)):
-            x = sum(xi*gi for xi,gi in zip(x,self.gens()))
+            x = sum(xi * gi for xi, gi in zip(x, self.gens()))
         if not is_Element(x) or x.parent() is not self._K:
             x = self._K(x)
         V, _, embedding = self._K.vector_space()
@@ -1261,7 +1275,8 @@ class AbsoluteOrder(Order):
             sage: loads(dumps(OL)) == OL
             True
         """
-        return (AbsoluteOrder, (self.number_field(), self.free_module(), self._is_maximal, False))
+        return (AbsoluteOrder, (self.number_field(), self.free_module(),
+                                self._is_maximal, False))
 
     def __add__(left, right):
         """
@@ -1281,7 +1296,8 @@ class AbsoluteOrder(Order):
             sage: R.basis()
             [1, 6*a, 3*a^2]
         """
-        if not isinstance(left, AbsoluteOrder) or not isinstance(right, AbsoluteOrder):
+        if not isinstance(left, AbsoluteOrder) or not isinstance(
+                right, AbsoluteOrder):
             raise NotImplementedError
         if left.number_field() != right.number_field():
             raise TypeError("Number fields don't match.")
@@ -1289,7 +1305,8 @@ class AbsoluteOrder(Order):
             return left
         elif right._is_maximal:
             return right
-        return AbsoluteOrder(left._K, left._module_rep + right._module_rep, None)
+        return AbsoluteOrder(left._K, left._module_rep + right._module_rep,
+                             None)
 
     def __and__(left, right):
         """
@@ -1306,11 +1323,14 @@ class AbsoluteOrder(Order):
             sage: O3.intersection(O5).basis()
             [1, 15*i]
         """
-        if not isinstance(left, AbsoluteOrder) or not isinstance(right, AbsoluteOrder):
+        if not isinstance(left, AbsoluteOrder) or not isinstance(
+                right, AbsoluteOrder):
             raise NotImplementedError
         if left.number_field() != right.number_field():
             raise TypeError("Number fields don't match.")
-        return AbsoluteOrder(left._K, left._module_rep.intersection(right._module_rep), False)
+        return AbsoluteOrder(left._K,
+                             left._module_rep.intersection(right._module_rep),
+                             False)
 
     def _magma_init_(self, magma):
         """
@@ -1337,7 +1357,7 @@ class AbsoluteOrder(Order):
         """
         K = self.number_field()
         v = [K(a)._magma_init_(magma) for a in self.basis()]
-        return 'Order([%s])'%(','.join(v))
+        return 'Order([%s])' % (','.join(v))
 
     def discriminant(self):
         """
@@ -1369,7 +1389,6 @@ class AbsoluteOrder(Order):
 
     absolute_discriminant = discriminant
 
-
     def change_names(self, names):
         """
         Return a new order isomorphic to this one in the number field with
@@ -1389,7 +1408,8 @@ class AbsoluteOrder(Order):
         K = self.number_field().change_names(names)
         _, to_K = K.structure()
         B = [to_K(a) for a in self.basis()]
-        return K.order(B, check_is_integral=False, check_rank=False, allow_subfield=True)
+        return K.order(
+            B, check_is_integral=False, check_rank=False, allow_subfield=True)
 
     def index_in(self, other):
         """
@@ -1432,7 +1452,8 @@ class AbsoluteOrder(Order):
         if not isinstance(other, AbsoluteOrder):
             raise TypeError("other must be an absolute order.")
         if other.ambient() != self.ambient():
-            raise ValueError("other must have the same ambient number field as self.")
+            raise ValueError(
+                "other must have the same ambient number field as self.")
         return self._module_rep.index_in(other._module_rep)
 
     def module(self):
@@ -1542,7 +1563,8 @@ class AbsoluteOrder(Order):
             return self.__basis
         except AttributeError:
             V, from_V, to_V = self._K.vector_space()
-            B = Sequence([self(from_V(b)) for b in self._module_rep.basis()], immutable=True)
+            B = Sequence([self(from_V(b)) for b in self._module_rep.basis()],
+                         immutable=True)
             self.__basis = B
         return B
 
@@ -1561,6 +1583,7 @@ class AbsoluteOrder(Order):
         """
         return self
 
+
 class RelativeOrder(Order):
     """
     A relative order in a number field.
@@ -1570,6 +1593,7 @@ class RelativeOrder(Order):
     Invariants of this order may be computed with respect to the
     contained order.
     """
+
     def __init__(self, K, absolute_order, is_maximal=None, check=True):
         """
         Create the relative order.
@@ -1628,7 +1652,7 @@ class RelativeOrder(Order):
         x = self._K(x)
         abs_order = self._absolute_order
         to_abs = abs_order._K.structure()[1]
-        x = abs_order(to_abs(x)) # will test membership
+        x = abs_order(to_abs(x))  # will test membership
         return OrderElement_relative(self, x)
 
     def _repr_(self):
@@ -1642,7 +1666,8 @@ class RelativeOrder(Order):
             'Relative Order in Number Field in a with defining polynomial x^2 + x + 1 over its base field'
         """
         #", ".join([str(b) for b in self.basis()]),
-        return "%sRelative Order in %r" % ("Maximal " if self._is_maximal else "", self._K)
+        return "%sRelative Order in %r" % ("Maximal " if self._is_maximal else
+                                           "", self._K)
 
     def absolute_order(self, names='z'):
         """
@@ -1681,7 +1706,7 @@ class RelativeOrder(Order):
             sage: R.absolute_order('gamma').basis()
             [1/2*gamma^2 + 1/2, 7/10*gamma^3 + 1/10*gamma, gamma^2, gamma^3]
         """
-        if names == 'z' or names == ('z',):
+        if names == 'z' or names == ('z', ):
             return self._absolute_order
         else:
             return self._absolute_order.change_names(names)
@@ -1698,7 +1723,8 @@ class RelativeOrder(Order):
             sage: O == loads(dumps(O))
             True
         """
-        return (RelativeOrder, (self.number_field(), self.absolute_order(), self._is_maximal, False))
+        return (RelativeOrder, (self.number_field(), self.absolute_order(),
+                                self._is_maximal, False))
 
     def basis(self):
         r"""
@@ -1722,7 +1748,9 @@ class RelativeOrder(Order):
         O = self._absolute_order
         K = O.number_field()
         from_K, _ = K.structure()
-        self.__basis = [OrderElement_relative(self, from_K(a)) for a in O.basis()]
+        self.__basis = [
+            OrderElement_relative(self, from_K(a)) for a in O.basis()
+        ]
         return self.__basis
 
     def __add__(left, right):
@@ -1752,11 +1780,14 @@ class RelativeOrder(Order):
             return left + right._absolute_order
         elif isinstance(right, AbsoluteOrder):
             return left._absolute_order + right
-        elif isinstance(left, RelativeOrder) and isinstance(right, RelativeOrder):
+        elif isinstance(left, RelativeOrder) and isinstance(
+                right, RelativeOrder):
             if left._K != right._K:
                 raise TypeError("Number fields don't match.")
-            return RelativeOrder(left._K, left._absolute_order + right._absolute_order,
-                                 check=False)
+            return RelativeOrder(
+                left._K,
+                left._absolute_order + right._absolute_order,
+                check=False)
         else:
             raise NotImplementedError
 
@@ -1779,11 +1810,14 @@ class RelativeOrder(Order):
             return left & right._absolute_order
         elif isinstance(right, AbsoluteOrder):
             return left._absolute_order & right
-        elif isinstance(left, RelativeOrder) and isinstance(right, RelativeOrder):
+        elif isinstance(left, RelativeOrder) and isinstance(
+                right, RelativeOrder):
             if left._K != right._K:
                 raise TypeError("Number fields don't match.")
-            return RelativeOrder(left._K, left._absolute_order & right._absolute_order,
-                                  check=False)
+            return RelativeOrder(
+                left._K,
+                left._absolute_order & right._absolute_order,
+                check=False)
         else:
             raise NotImplementedError
 
@@ -1859,7 +1893,6 @@ class RelativeOrder(Order):
         return self.absolute_order().index_in(other.absolute_order())
 
 
-
 def each_is_integral(v):
     """
     Return True if each element of the list ``v`` of elements of a number
@@ -1879,8 +1912,11 @@ def each_is_integral(v):
             return False
     return True
 
-def absolute_order_from_ring_generators(gens, check_is_integral=True,
-                                        check_rank=True, is_maximal=None,
+
+def absolute_order_from_ring_generators(gens,
+                                        check_is_integral=True,
+                                        check_rank=True,
+                                        is_maximal=None,
                                         allow_subfield=False):
     """
     INPUT:
@@ -1940,16 +1976,21 @@ def absolute_order_from_ring_generators(gens, check_is_integral=True,
     gens = Sequence(gens)
     n = [x.absolute_minpoly().degree() for x in gens]
     module_gens = monomials(gens, n)
-    return absolute_order_from_module_generators(module_gens,
-               check_integral=False, check_is_ring=False,
-               check_rank=check_rank, is_maximal=is_maximal,
-               allow_subfield = allow_subfield)
+    return absolute_order_from_module_generators(
+        module_gens,
+        check_integral=False,
+        check_is_ring=False,
+        check_rank=check_rank,
+        is_maximal=is_maximal,
+        allow_subfield=allow_subfield)
 
 
 def absolute_order_from_module_generators(gens,
-              check_integral=True, check_rank=True,
-              check_is_ring=True, is_maximal=None,
-              allow_subfield = False):
+                                          check_integral=True,
+                                          check_rank=True,
+                                          check_is_ring=True,
+                                          is_maximal=None,
+                                          allow_subfield=False):
     """
     INPUT:
 
@@ -2076,20 +2117,24 @@ def absolute_order_from_module_generators(gens,
 
     if check_is_ring:
         # Is there a faster way?
-        alg = [to_V(x) for x in monomials(gens, [f.absolute_minpoly().degree() for f in gens])]
+        alg = [
+            to_V(x) for x in monomials(
+                gens, [f.absolute_minpoly().degree() for f in gens])
+        ]
         if ambient.span(alg) != W:
-            raise ValueError("the module span of the gens is not closed under multiplication.")
+            raise ValueError(
+                "the module span of the gens is not closed under multiplication."
+            )
 
-    return AbsoluteOrder(K, W, check=False, is_maximal=is_maximal)  # we have already checked everything
-
-
-
+    return AbsoluteOrder(
+        K, W, check=False,
+        is_maximal=is_maximal)  # we have already checked everything
 
 
 def relative_order_from_ring_generators(gens,
                                         check_is_integral=True,
                                         check_rank=True,
-                                        is_maximal = None,
+                                        is_maximal=None,
                                         allow_subfield=False):
     """
     INPUT:
@@ -2134,9 +2179,11 @@ def relative_order_from_ring_generators(gens,
     n = [a.absolute_minpoly().degree() for a in gens]
     absolute_order_module_gens = monomials(module_gens, n)
 
-    abs_order =  absolute_order_from_module_generators(absolute_order_module_gens,
-                                                       check_integral=False, check_is_ring=False,
-                                                       check_rank=check_rank)
+    abs_order = absolute_order_from_module_generators(
+        absolute_order_module_gens,
+        check_integral=False,
+        check_is_ring=False,
+        check_rank=check_rank)
 
     return RelativeOrder(K, abs_order, check=False, is_maximal=is_maximal)
 
@@ -2161,7 +2208,7 @@ def GaussianIntegers(names="I"):
         [1, I]
     """
     from sage.rings.all import CDF, NumberField
-    f = ZZ['x']([1,0,1])
+    f = ZZ['x']([1, 0, 1])
     nf = NumberField(f, names, embedding=CDF(0, 1))
     return nf.ring_of_integers()
 
@@ -2187,6 +2234,6 @@ def EisensteinIntegers(names="omega"):
         [1, omega]
     """
     from sage.rings.all import CDF, NumberField
-    f = ZZ['x']([1,1,1])
+    f = ZZ['x']([1, 1, 1])
     nf = NumberField(f, names, embedding=CDF(-0.5, 0.8660254037844386))
     return nf.ring_of_integers()
