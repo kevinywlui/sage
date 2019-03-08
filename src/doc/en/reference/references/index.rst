@@ -2106,6 +2106,11 @@ REFERENCES:
             http://portal.acm.org/citation.cfm?id=763203 and free of
             charge at :arxiv:`math/0106043`
 
+.. [KP2005] Jürgen Klüners and Sebastian Pauli, *Computing residue class rings
+            and Picard groups of orders*. Journal of Algebra, 292 (2005),
+            47-64.
+            https://www.sciencedirect.com/science/article/pii/S0021869305002498
+
 .. [Kra1999] \C. Krattenthaler,
            *Another Involution Principle-Free Bijective Proof of Stanley's Hook Content Formula*,
            Journal of Combinatorial Theory, Series A, **88** (1999), 66-92,
