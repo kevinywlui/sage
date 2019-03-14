@@ -199,7 +199,7 @@ class Order(IntegralDomain):
             sage: R.fractional_ideal(2/3 + 7*a, a)
             Fractional ideal (1/3*a)
         """
-        if self.is_maximal:
+        if self.is_maximal():
             return self.number_field().fractional_ideal(*args, **kwds)
         else:
             from sage.rings.number_field.order_ideal import OrderIdeal
