@@ -6,7 +6,6 @@ from __future__ import absolute_import
 from sage.misc.cachefunc import cached_method
 from sage.rings.ideal import Ideal_generic
 from sage.rings.all import ZZ
-# from sage.rings.number_field.number_field_ideal import basis_to_module
 
 
 class OrderIdeal(Ideal_generic):
@@ -84,3 +83,23 @@ class OrderIdeal(Ideal_generic):
     #     above = aOK.prime_factors()
 
     #     return [O.intersection(p) for p in above]
+
+def basis_to_module(B, K):
+    r"""
+    Given a basis `B` of elements for a `\ZZ`-submodule of a number
+    field `K`, return the corresponding `\ZZ`-submodule.
+
+    EXAMPLES::
+
+        sage: K.<w> = NumberField(x^4 + 1)
+        sage: from sage.rings.number_field.order_ideal import basis_to_module
+        sage: basis_to_module([K.0, K.0^2 + 3], K)
+        Free module of degree 4 and rank 2 over Integer Ring
+        User basis matrix:
+        [0 1 0 0]
+        [3 0 1 0]
+    """
+    V, from_V, to_V = K.absolute_vector_space()
+    M = ZZ**(V.dimension())
+    C = [to_V(K(b)) for b in B]
+    return M.span_of_basis(C)

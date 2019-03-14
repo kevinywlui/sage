@@ -570,7 +570,7 @@ class Order(IntegralDomain):
             return self.__free_module
         except AttributeError:
             pass
-        from .number_field_ideal import basis_to_module
+        from .order_ideal import basis_to_module
         M = basis_to_module(self.basis(), self.number_field())
         self.__free_module = M
         return M

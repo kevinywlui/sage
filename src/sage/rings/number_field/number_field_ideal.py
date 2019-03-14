@@ -49,7 +49,7 @@ import sage.misc.misc as misc
 from sage.rings.finite_rings.finite_field_constructor import FiniteField
 
 
-from sage.rings.number_field.order_ideal import OrderIdeal
+from sage.rings.number_field.order_ideal import OrderIdeal, basis_to_module
 from sage.misc.all import prod
 from sage.misc.mrange import xmrange_iter
 from sage.misc.cachefunc import cached_method
@@ -1660,25 +1660,6 @@ class NumberFieldIdeal(OrderIdeal):
         raise ValueError("not defined for ideals in number fields of degree > 2 over Q.")
 
 
-def basis_to_module(B, K):
-    r"""
-    Given a basis `B` of elements for a `\ZZ`-submodule of a number
-    field `K`, return the corresponding `\ZZ`-submodule.
-
-    EXAMPLES::
-
-        sage: K.<w> = NumberField(x^4 + 1)
-        sage: from sage.rings.number_field.number_field_ideal import basis_to_module
-        sage: basis_to_module([K.0, K.0^2 + 3], K)
-        Free module of degree 4 and rank 2 over Integer Ring
-        User basis matrix:
-        [0 1 0 0]
-        [3 0 1 0]
-    """
-    V, from_V, to_V = K.absolute_vector_space()
-    M = ZZ**(V.dimension())
-    C = [to_V(K(b)) for b in B]
-    return M.span_of_basis(C)
 
 def is_NumberFieldIdeal(x):
     """
