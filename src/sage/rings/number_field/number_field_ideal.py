@@ -1273,21 +1273,6 @@ class NumberFieldIdeal(OrderIdeal):
         """
         return self.ramification_index()
 
-    def number_field(self):
-        """
-        Return the number field that this is a fractional ideal in.
-
-        EXAMPLES::
-
-            sage: K.<a> = NumberField(x^2 + 2); K
-            Number Field in a with defining polynomial x^2 + 2
-            sage: K.ideal(3).number_field()
-            Number Field in a with defining polynomial x^2 + 2
-            sage: K.ideal(0).number_field() # not tested (not implemented)
-            Number Field in a with defining polynomial x^2 + 2
-        """
-        return self.ring()
-
     def smallest_integer(self):
         r"""
         Return the smallest non-negative integer in `I \cap \ZZ`,

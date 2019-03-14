@@ -47,11 +47,40 @@ class OrderIdeal(Ideal_generic):
             self.__is_integral = all(a in self._order for a in self.gens())
             return self.__is_integral
 
-    # def order(self):
-    #     return self._older
+    def order(self):
+        """
+        Return the number field order containing this ideal.
 
-    # def number_field(self):
-    #     return self.ring()
+        EXAMPLES::
+
+           sage: K.<a> = NumberField(x^2-5)
+           sage: O = K.order(a)
+           sage: I = O.ideal(5)
+           sage: I.order() == O
+           True
+        """
+
+        return self._order
+
+    def number_field(self):
+        """
+        Return the number field that this is a fractional ideal in.
+
+        EXAMPLES::
+
+            sage: K.<a> = NumberField(x^2 + 2); K
+            Number Field in a with defining polynomial x^2 + 2
+            sage: K.ideal(3).number_field()
+            Number Field in a with defining polynomial x^2 + 2
+            sage: K.ideal(0).number_field() # not tested (not implemented)
+            Number Field in a with defining polynomial x^2 + 2
+            sage: O = K.order(2*a); O.is_maximal()
+            False
+            sage: O.ideal(3).number_field()
+            Number Field in a with defining polynomial x^2 + 2
+        """
+        return self.ring()
+
 
     # @cached_method
     # def basis(self):
