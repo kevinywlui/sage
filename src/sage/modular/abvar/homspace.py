@@ -529,6 +529,16 @@ class Homspace(HomsetWithBase):
              Abelian variety endomorphism of Abelian variety J0(22) of dimension 2,
              Abelian variety endomorphism of Abelian variety J0(22) of dimension 2,
              Abelian variety endomorphism of Abelian variety J0(22) of dimension 2)
+
+        This also works for factors of subvarieties of Jacobians. ::
+
+            sage: J = J0(23)
+            sage: A = (J / J.cuspidal_subgroup())[0]; A
+            Abelian variety factor of dimension 2 of J0(23)
+            sage: E = A.endomorphism_ring()
+            sage: E.gens()
+            (Abelian variety endomorphism of Abelian variety factor of dimension 2 of J0(23),
+             Abelian variety endomorphism of Abelian variety factor of dimension 2 of J0(23))
         """
         try:
             return self._gen_morphisms
