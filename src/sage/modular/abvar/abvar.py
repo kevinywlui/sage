@@ -3723,6 +3723,53 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         self._simple_product_isogeny = H(Morphism(H, mat))
         return self._simple_product_isogeny
 
+    def isogeny_to_subvariety(self):
+        r"""
+        Given an abelian variety `A`, return an isogeny `\phi: A \rightarrow
+        B`, where `B` is a subvariety of the ambient Jacobian of `A`.
+
+        Modular abelian varieties in Sage are defined by a tuple $(G, B, J)$,
+        where $J$ is the ambient Jacobian, $B$ is a subvariety of $J$, and $G$
+        a finite subgroup of $B$ so that $A$ is given by $B/G$. This method
+        returns a map $A\to B/G$.
+
+        EXAMPLES::
+
+        If self is already a subvariety of its ambient Jacobian, then return
+        self. ::
+
+            sage: J = J0(33)
+            sage: J.isogeny_to_subvariety().is_identity()
+            True
+
+        ::
+
+            sage: A = J0(23)
+            sage: B, G = A / A.cuspidal_subgroup()
+            sage: f = B.isogeny_to_subvariety()
+            sage: f.is_isogeny()
+            True
+            sage: f.codomain().is_subvariety_of_ambient_jacobian()
+            True
+        """
+        if self.is_subvariety_of_ambient_jacobian():
+            return self.endomorphism_ring().identity()
+        else:
+            # the subvariety of J isogenous to A is given by taking the
+            # saturation of the defining lattice of A.
+            L = self.lattice()
+            Lsat = L.saturation()
+            B = ModularAbelianVariety(self.groups(), Lsat)
+            X = [x.lift() for x in (L / Lsat).gens()]
+            G = B.finite_subgroup(X, field_of_definition=QQ)
+            # self_again should be self, q is the quotient to self
+            self_again, q = B / G
+
+            # return dual of the quotient map
+            return q.complementary_isogeny()
+
+
+
     def _isogeny_to_product_of_powers(self):
         r"""
         Given an abelian variety `A`, return an isogeny
@@ -3748,14 +3795,35 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             Abelian variety morphism:
               From: Abelian variety J0(22) x J0(37) of dimension 4
               To:   Abelian subvariety of dimension 4 of J0(22) x J0(37) x J0(22) x J0(37) x J0(22) x J0(37)
+
+        This also works when `A` is given as a quotient.
+
+            sage: J = J0(23)
+            sage: A = (J / J.cuspidal_subgroup())[0]
+            sage: f = A._isogeny_to_product_of_powers(); f
+            Abelian variety morphism:
+              From: Abelian variety factor of dimension 2 of J0(23)
+              To:   Abelian variety J0(23) of dimension 2
+            sage: f.is_isogeny()
+            True
+
         """
         try:
             return self._simple_power_product_isogeny
         except AttributeError:
             pass
 
+        # If self is not a subvariety of its ambient Jacobian, then we compute
+        # f \circ g, where g:self \to B is an isogeny to a subvariety to its
+        # ambient Jacobian and f = B._simple_power_product_isogeny()
+        if not self.is_subvariety_of_ambient_jacobian():
+            f = self.isogeny_to_subvariety()
+            B = f.codomain()
+            return B._isogeny_to_product_of_powers() * f
+
         D = self.decomposition(simple=False)
         A = self.ambient_variety()
+
         proj_ls = [A.projection(factor) for factor in D]
         dest = prod([phi.image() for phi in proj_ls])
         dim = sum([d.dimension() for d in D])

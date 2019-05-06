@@ -130,6 +130,23 @@ class Morphism_abstract(sage.modules.matrix_morphism.MatrixMorphism_abstract):
         M = self.matrix()
         return M.nrows() == M.ncols() == M.rank()
 
+    def is_identity(self):
+        r"""
+        Return True if this morphism is the identity map.
+
+        EXAMPLES::
+
+            sage: A = J0(33)[0]
+            sage: E = A.endomorphism_ring()
+            sage: E.identity().is_identity()
+            True
+            sage: _, f = A/A.shimura_subgroup()
+            sage: f.is_identity()
+            False
+        """
+        M = self.matrix()
+        return self.is_endomorphism() and M.is_one()
+
     def cokernel(self):
         """
         Return the cokernel of self.
