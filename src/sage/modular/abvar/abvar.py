@@ -3764,7 +3764,8 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         returns $B$ by returning the abelian variety whose defining lattice is
         the saturation of $A$'s.
 
-        This is currently only implemented when `self.groups()` is a singleton.
+        This is currently only implemented when `self.groups()` is a singleton
+        and self.is_hecke_stable()
 
         EXAMPLES::
 
