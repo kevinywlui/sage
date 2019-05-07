@@ -2744,6 +2744,36 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         self.__hecke_polynomial[key] = f
         return f
 
+    def hecke_eigenvalue_field(self):
+        r"""
+        Return the Hecke eigenvalue field of self when self is simple and Hecke
+        stable.
+
+        If $A$ is a simple abelian variety, $A$ is isogenous to $A_f$ for some
+        newform $f=\sum a_n q^n$. This returns a number field isomorphic to
+        $\mathbf{Q}(\ldots,a_n,\ldots)$.
+
+        EXAMPLES::
+
+        sage: A, B = J0(37)
+        sage: X, _ = A / A.cuspidal_subgroup()
+        sage: X.hecke_eigenvalue_field()
+        Rational Field
+
+        ::
+
+        sage: J = J0(23)
+        sage: A, _ = J / J.cuspidal_subgroup()
+        sage: A.hecke_eigenvalue_field()
+        Number Field in alpha with defining polynomial x^2 + x - 1
+        """
+        if not self.is_simple():
+            raise ValueError("self must be simple")
+        if not self.is_hecke_stable():
+            raise ValueError("self must be Hecke stable")
+        A = self.isogenous_subvariety()
+        return A.modular_symbols(sign=1).dual_eigenvector()[-1].parent()
+
     def _compute_hecke_polynomial(self, n, var='x'):
         """
         Return the Hecke polynomial of index `n` in terms of the
@@ -3723,6 +3753,58 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         self._simple_product_isogeny = H(Morphism(H, mat))
         return self._simple_product_isogeny
 
+    def isogenous_subvariety(self):
+        r"""
+        Given an abelian variety `A`, return an isogenous abelian variety `B`
+        so that `B` is a subvariety of the ambient Jacobian of `A`.
+
+        Modular abelian varieties in Sage are defined by a tuple $(G, B, J)$,
+        where $J$ is the ambient Jacobian, $B$ is a subvariety of $J$, and $G$
+        a finite subgroup of $B$ so that $A$ is given by $B/G$. This method
+        returns $B$ by returning the abelian variety whose defining lattice is
+        the saturation of $A$'s.
+
+        This is currently only implemented when `self.groups()` is a singleton.
+
+        EXAMPLES::
+
+            sage: J = J0(23)
+            sage: A, _ = J / J.cuspidal_subgroup()
+            sage: A.isogenous_subvariety() == J
+            True
+
+        Currently only implemented when self.groups() is a singleton and self
+        is Hecke stable. ::
+
+            sage: A = J0(11) * J0(11)
+            sage: A.isogenous_subvariety()
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: only implemented when self.groups() is singleton and self.is_hecke_stable()
+
+            sage: A, _ = J0(22)
+            sage: A.is_hecke_stable()
+            False
+            sage: A.isogenous_subvariety()
+            Traceback (most recent call last):
+            ...
+            NotImplementedError: only implemented when self.groups() is singleton and self.is_hecke_stable()
+        """
+        if not len(self.groups()) == 1 or not self.is_hecke_stable():
+            raise NotImplementedError(
+                'only implemented when self.groups() is '
+                'singleton and self.is_hecke_stable()')
+
+        # the subvariety of J isogenous to A is given by taking the
+        # saturation of the defining lattice of A.
+        L = self.lattice()
+        Lsat = L.saturation()
+        modsym_B = ModularSymbols(self.groups()[0]) \
+            .cuspidal_subspace() \
+            .submodule_from_nonembedded_module(Lsat)
+        B = ModularAbelianVariety_modsym(modsym_B)
+        return B
+
     def isogeny_to_subvariety(self):
         r"""
         Given an abelian variety `A`, return an isogeny `\phi: A \rightarrow
@@ -3735,15 +3817,6 @@ class ModularAbelianVariety_abstract(ParentWithBase):
 
         EXAMPLES::
 
-        If self is already a subvariety of its ambient Jacobian, then return
-        self. ::
-
-            sage: J = J0(33)
-            sage: J.isogeny_to_subvariety().is_identity()
-            True
-
-        ::
-
             sage: A = J0(23)
             sage: B, G = A / A.cuspidal_subgroup()
             sage: f = B.isogeny_to_subvariety()
@@ -3755,11 +3828,10 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         if self.is_subvariety_of_ambient_jacobian():
             return self.endomorphism_ring().identity()
         else:
-            # the subvariety of J isogenous to A is given by taking the
-            # saturation of the defining lattice of A.
+            # find A=B/G so find G by taking quotient of defining lattices
+            B = self.isogenous_subvariety()
             L = self.lattice()
             Lsat = L.saturation()
-            B = ModularAbelianVariety(self.groups(), Lsat)
             X = [x.lift() for x in (L / Lsat).gens()]
             G = B.finite_subgroup(X, field_of_definition=QQ)
             # self_again should be self, q is the quotient to self
