@@ -258,6 +258,18 @@ class Homspace(HomsetWithBase):
         M = self.matrix_space().one()
         return self.element_class(self, M)
 
+    def random_element(self):
+        r"""
+        Return a random element by obtaining a random element of the underlying
+        free module.
+
+        Output:
+            - A morphism in this homset.
+        """
+        F = self.free_module()
+        M = self.matrix_space()
+        return self(M(F.random_element()))
+
     @lazy_attribute
     def _matrix_space(self):
         """
