@@ -184,7 +184,7 @@ from sage.structure.all import parent
 from sage.misc.lazy_attribute import lazy_attribute
 
 from . import morphism
-from endomorphism_algebra import EndomorphismAlgebra
+from . import endomorphism_algebra
 
 import sage.rings.integer_ring
 import sage.rings.all
@@ -1034,4 +1034,4 @@ class EndomorphismSubring(Homspace, Ring):
         r"""
         Return the endomorphism algebra obtained by tensoring with QQ.
         """
-        return EndomorphismAlgebra(self)
+        return endomorphism_algebra.EndomorphismAlgebra(self)

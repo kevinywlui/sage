@@ -38,7 +38,7 @@ class EndomorphismAlgebra(HomsetWithBase):
         r"""
         Coerce something into this space assuming M is a matrix.
         """
-
+        return self.element_class(self, M)
 
     def endomorphism_ring(self):
         r"""
