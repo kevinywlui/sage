@@ -184,6 +184,7 @@ from sage.structure.all import parent
 from sage.misc.lazy_attribute import lazy_attribute
 
 from . import morphism
+from endomorphism_algebra import EndomorphismAlgebra
 
 import sage.rings.integer_ring
 import sage.rings.all
@@ -1028,3 +1029,9 @@ class EndomorphismSubring(Homspace, Ring):
 
         self.__hecke_algebra_image = EndomorphismSubring(A, V.basis())
         return self.__hecke_algebra_image
+
+    def endomorphism_algebra(self):
+        r"""
+        Return the endomorphism algebra obtained by tensoring with QQ.
+        """
+        return EndomorphismAlgebra(self)
