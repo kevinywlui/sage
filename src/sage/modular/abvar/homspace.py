@@ -368,14 +368,16 @@ class Homspace(HomsetWithBase):
                 M = M.matrix()
             else:
                 raise ValueError("cannot convert %s into %s" % (M, self))
+        elif self.matrix_space().has_coerce_map_from(parent(M)):
+            M = self.matrix_space()(M)
+        if hasattr(M, 'matrix'):
+            M = M.matrix()
         elif is_Matrix(M):
             if M.base_ring() != ZZ:
                 M = M.change_ring(ZZ)
             if M.nrows() != 2 * self.domain().dimension() or M.ncols(
             ) != 2 * self.codomain().dimension():
                 raise TypeError("matrix has wrong dimension")
-        elif self.matrix_space().has_coerce_map_from(parent(M)):
-            M = self.matrix_space()(M)
         else:
             raise TypeError("can only coerce in matrices or morphisms")
         return self.element_class(self, M)
