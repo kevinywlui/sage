@@ -5,11 +5,13 @@ abelian variety by QQ.
 from sage.categories.homset import HomsetWithBase
 from sage.modules.matrix_morphism import MatrixMorphism
 from sage.modules.free_module import FreeModule_submodule_field
+from sage.modules.free_module_element import vector
 from sage.rings.ring import Ring
 from sage.structure.element import RingElement
 from sage.rings.all import QQ, ZZ
 from sage.rings.number_field.number_field import NumberField
 from sage.structure.unique_representation import UniqueRepresentation
+from sage.matrix.constructor import matrix
 
 
 class Morphism(MatrixMorphism, RingElement):
@@ -24,6 +26,21 @@ class Morphism(MatrixMorphism, RingElement):
 
     def parent(self):
         return self._parent
+
+    def _im_gens_(self, codomain, im_gens):
+        """
+        Return the image of ``self`` in codomain under the map that sends
+        the images of the generators of the parent of ``self`` to the
+        tuple of elements of im_gens.
+
+        We assume that im_gens forms a rational basis for the endomorphism
+        algebra.
+        """
+        B = self.parent().gens()
+        Bmatrix = matrix(QQ, [b.matrix().list() for b in B])
+        coeffs = Bmatrix.solve_left(vector(self.matrix().list()))
+        return sum(x * y for x, y in zip(coeffs, im_gens))
+
 
 class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
     r"""
@@ -94,11 +111,41 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
     def characteristic(self):
         return ZZ(0)
 
+    def _calculate_power_basis(self):
+        r"""
+        Return a power basis for self when self is a field.
+        """
+        try:
+            return self._a_power_basis
+        except AttributeError:
+            pass
+
+        A = self.abelian_variety()
+        d = A.dimension()
+
+        # this will very likely work
+        for i in range(100):
+            phi = self.random_element()
+            f = phi.matrix().minpoly()
+            if f.degree() == d:
+                break
+
+        # self._a_power_basis = tuple(self(phi**i) for i in range(d))
+        self._a_power_basis = tuple([self.one()] +
+                                    [self(phi**i) for i in range(1, d)])
+        return self._a_power_basis
+
     def gens(self):
-        return tuple(self(x) for x in self.endomorphism_ring().gens())
+        r"""
+        Return a power basis for self when self is a field.
+        """
+        return self._calculate_power_basis()
 
     def gen(self, i):
         return self.gens()[i]
+
+    def ngens(self):
+        return len(self.gens())
 
     def random_element(self):
         r"""
@@ -120,27 +167,29 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         """
         return self.endomorphism_ring().abelian_variety()
 
-    def _maps_to_field(self):
+    def _is_valid_homomorphism_(sel, codomain, im_gens):
+        return True  # TODO:FIX!!
+
+    def maps_to_field(self):
         r"""
         Return the maps to and from the hecke_eigenvalue_field when simple and
         new.
         """
-        A = self.abelian_variety()
-        if not A.is_simple():
-            return ValueError("self must be simple")
 
-        d = A.dimension()
+        # Here A represents the algebra which is really confusing since A is
+        # also the abelian variety....Yikes...
+        B = self.gens()
 
-        # this will very likely work
-        for i in range(100):
-            phi = self.random_element()
-            f = phi.matrix().minpoly()
-            if f.degree() == d:
-                K = NumberField(f, names='a')
-                break
-        return f, phi
+        phi = B[1]
+        f = phi.matrix().minpoly()
+
+        K = NumberField(f, names='alpha')
+        alpha = K.gens()[0]
+
         K_to_A = K.hom([phi])
-        return K, K_to_A
+        A_to_K = self.hom([alpha**i for i in range(f.degree())])
+
+        return K, K_to_A, A_to_K
 
     def free_module(self):
         r"""
