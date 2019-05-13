@@ -1886,7 +1886,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         """
         Return the endomorphism ring of self.
 
-        OUTPUT: b = self.sturm_bound()
+        OUTPUT: endomorphism ring of self.
 
         EXAMPLES: We compute a few endomorphism rings::
 
@@ -1909,6 +1909,22 @@ class ModularAbelianVariety_abstract(ParentWithBase):
 
         self.__endomorphism_ring = homspace.EndomorphismSubring(
             self, category=category)
+        return self.__endomorphism_ring
+
+    def endomorphism_algebra(self):
+        r"""
+        Return the endomorphism algebra of self obtained by base extending the 
+        endomorphism ring by $\QQ$.
+
+        OUTPUT: the endomorphism algebra of self.
+        """
+        try:
+            return self.__endomorphism_algebra
+        except AttributeError:
+            pass
+        from . import endomorphism_algebra
+        self.__endomorphism_ring = endomorphism_algebra. \
+            EndomorphismAlgebra(self.endomorphism_ring())
         return self.__endomorphism_ring
 
     def sturm_bound(self):

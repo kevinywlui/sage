@@ -4,7 +4,6 @@ abelian variety by QQ.
 """
 from sage.categories.homset import HomsetWithBase
 from sage.modules.matrix_morphism import MatrixMorphism
-from sage.modules.free_module import FreeModule_submodule_field
 from sage.modules.free_module_element import vector
 from sage.rings.ring import Ring
 from sage.structure.element import RingElement
@@ -28,7 +27,7 @@ class Morphism(MatrixMorphism, RingElement):
         return self._parent
 
     def _im_gens_(self, codomain, im_gens):
-        """
+        r"""
         Return the image of ``self`` in codomain under the map that sends
         the images of the generators of the parent of ``self`` to the
         tuple of elements of im_gens.
@@ -36,10 +35,31 @@ class Morphism(MatrixMorphism, RingElement):
         We assume that im_gens forms a rational basis for the endomorphism
         algebra.
         """
-        B = self.parent().gens()
-        Bmatrix = matrix(QQ, [b.matrix().list() for b in B])
-        coeffs = Bmatrix.solve_left(vector(self.matrix().list()))
+        Bs = self.parent().gens()
+        coeffs = self._linear_combination_coefficients(Bs)
         return sum(x * y for x, y in zip(coeffs, im_gens))
+
+    def _linear_combination_coefficients(self, Bs):
+        r"""
+        Return the coefficients needed to write self as a linear combination of
+        elements of Bs.
+
+        INPUT:
+
+        - ``Bs`` -- a list of morphisms containing self in its span.
+
+        OUTPUT:
+
+        A list of numbers of length equal to ``Bs``.
+        """
+        Bmatrix = matrix(QQ, [b.list() for b in Bs])
+        return Bmatrix.solve_left(vector(self.list()))
+
+    def list(self):
+        r"""
+        Return a list of elements in the matrix of self.
+        """
+        return self.matrix().list()
 
 
 class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
@@ -73,25 +93,63 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         construct from matrices or rationals.
         """
         M = self.matrix_space()
-        if x in M:
-            return self.element_class(self, M(x))
-        elif x in self.endomorphism_ring():
+        if x in self.endomorphism_ring():
             return self.element_class(self, M(x.matrix()))
         elif isinstance(x, Morphism):
             return self.element_class(self, M(x.matrix()))
-        else:
-            raise ValueError('x must be either a Morphism'
-                             'or a matrix of the suitable size')
+
+        try:
+            return self.element_class(self, M(x))
+        except TypeError:
+            pass
+
+        raise ValueError('x must be either a Morphism'
+                         ' or a matrix of the suitable size')
+
+    def an_element(self):
+        r"""
+        Return an element of self by returning the last generator.
+
+        OUTPUT: an element
+        """
+        return self.gens()[-1]
+
+    def some_elements(self):
+        r"""
+        Return some elements of self by returning the generators.
+
+        OUTPUT: a tuple of elements
+        """
+        return self.gens()
 
     def matrix_space(self):
         r"""
         Return the underlying matrix space of this endomorphism algebra.
+
+        OUTPUT: a matrix space.
+
+        EXAMPLES::
+
+            sage: J = J0(23); J.dimension()
+            2
+            sage: J.endomorphism_algebra().matrix_space()
+            Full MatrixSpace of 4 by 4 dense matrices over Rational Field
         """
         return self.endomorphism_ring().matrix_space().change_ring(QQ)
 
     def identity(self):
         r"""
         Return the identity element of this endomorphism algebra.
+
+        OUTPUT: the identity morphism of this endomorphism algebra.
+
+        EXAMPLES::
+
+            sage: J = J0(33)[2];
+            sage: A = J.endomorphism_algebra()
+            sage: one = A.identity()
+            sage: all([one*x == x for x in A.gens()])
+            True
         """
         M_one = self.matrix_space().one()
         return self.element_class(self, M_one)
@@ -109,37 +167,37 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
             return True
 
     def characteristic(self):
+        r"""
+        Return the characteristic of this endomorphism algebra which is zero.
+
+        OUTPUT: the integer 0.
+        """
         return ZZ(0)
 
-    def _calculate_power_basis(self):
+    def is_field(self, proof=True):
         r"""
-        Return a power basis for self when self is a field.
+        Return whether this endomorphism algebra is a field.
+
+        OUTPUT: a boolean
         """
-        try:
-            return self._a_power_basis
-        except AttributeError:
-            pass
+        return self.abelian_variety().is_simple()
 
-        A = self.abelian_variety()
-        d = A.dimension()
+    def basis(self):
+        r"""
+        Return a $\QQ$-basis of this endomorphism algebra.
 
-        # this will very likely work
-        for i in range(100):
-            phi = self.random_element()
-            f = phi.matrix().minpoly()
-            if f.degree() == d:
-                break
-
-        # self._a_power_basis = tuple(self(phi**i) for i in range(d))
-        self._a_power_basis = tuple([self.one()] +
-                                    [self(phi**i) for i in range(1, d)])
-        return self._a_power_basis
+        OUTPUT: a tuple of elements.
+        """
+        F = self.free_module()
+        return tuple(self(x) for x in F.basis())
 
     def gens(self):
         r"""
-        Return a power basis for self when self is a field.
+        Return a set of $\QQ$-module generators.
+
+        OUTPUT: a tuple consisting of elements.
         """
-        return self._calculate_power_basis()
+        return self.basis()
 
     def gen(self, i):
         return self.gens()[i]
@@ -167,29 +225,97 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         """
         return self.endomorphism_ring().abelian_variety()
 
-    def _is_valid_homomorphism_(sel, codomain, im_gens):
-        return True  # TODO:FIX!!
-
-    def maps_to_field(self):
+    def power_basis(self):
         r"""
-        Return the maps to and from the hecke_eigenvalue_field when simple and
-        new.
+        Return a power basis for self when self is a field.
+
+        We use a random algorithm. So we cached both for performance and
+        consistency reasons.
+
+        OUTPUT: a list of morphisms in this endomorphism algebra.
         """
+        try:
+            return self._a_power_basis
+        except AttributeError:
+            pass
 
-        # Here A represents the algebra which is really confusing since A is
-        # also the abelian variety....Yikes...
-        B = self.gens()
+        d = self.abelian_variety().dimension()
 
-        phi = B[1]
+        # this will very likely work
+        for i in range(100):
+            phi = self.random_element()
+            f = phi.matrix().minpoly()
+            if f.degree() == d:
+                break
+
+        # self._a_power_basis = tuple(self(phi**i) for i in range(d))
+        self._a_power_basis = tuple([self.one()] +
+                                    [self(phi**i) for i in range(1, d)])
+        return self._a_power_basis
+
+    def maps_to_field(self, check=False):
+        r"""
+        Return maps to and from the endomorphism algebra as a number field when
+        self is a field.
+
+        We use a random algorithm. So we cached both for performance and
+        consistency reasons.
+
+        INPUT:
+
+           - ``check`` -- boolean determining whether to check that the
+             composition yields the identity.
+
+        OUTPUT:
+
+            - a tuple consisting of ``(K, K_to_EA, EA_to_K)``, where
+                - ``K`` is a number field isomorphic to self.
+                - ``K_to_EA`` is an isomorphism from ``K`` to self.
+                - ``EA_to_K`` is an isomorphism from self to ``K``.
+
+        EXAMPLES::
+
+            sage: J = J0(23)
+            sage: A = J.endomorphism_algebra()
+            sage: K, K_to_EA, EA_to_K = A.maps_to_field()
+            sage: K.disc()
+            5
+            sage: alpha = K.gens()[0]
+            sage: EA_to_K(K_to_EA(alpha)) == alpha
+            True
+            sage: EA_to_K(K_to_EA(0)) == 0
+            True
+            sage: K_to_EA(EA_to_K(0)) == 0
+            True
+        """
+        power_basis = self.power_basis()
+
+        phi = power_basis[1]
         f = phi.matrix().minpoly()
 
         K = NumberField(f, names='alpha')
         alpha = K.gens()[0]
 
-        K_to_A = K.hom([phi])
-        A_to_K = self.hom([alpha**i for i in range(f.degree())])
+        # here EA represents the endomorphism algebra
+        K_to_EA = K.hom([phi])
 
-        return K, K_to_A, A_to_K
+        # we know phi**i -> alpha**i so write elements of self.gens() in terms
+        # of phi.
+        P = matrix([p.list() for p in power_basis])
+        G = matrix([g.list() for g in self.gens()])
+
+        C = P.solve_left(G)
+
+        d = len(power_basis)
+        EA_to_K = self.hom(
+            [sum(C[i][j] * alpha**j for j in range(d)) for i in range(d)],
+            check=False)
+
+        if check:
+            assert (K_to_EA(EA_to_K(x)) == x for x in self.gens())
+            assert (EA_to_K(K_to_EA(alpha)) == alpha)
+
+        return K, K_to_EA, EA_to_K
 
     def free_module(self):
         r"""
@@ -197,6 +323,4 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         `\QQ^{4d^2}`, where `d` is the dimension of the associated abelian
         variety.
         """
-        dim = self.abelian_variety().dimension()
-        V = QQ**(4 * dim * dim)
-        return V.submodule([V(m.matrix().list()) for m in self.gens()])
+        return self.endomorphism_ring().free_module().change_ring(QQ)
