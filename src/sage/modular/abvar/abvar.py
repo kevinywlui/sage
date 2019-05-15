@@ -713,6 +713,14 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         if not self.is_simple():
             raise ValueError("self is not simple")
 
+        # If self is not a subvariety of its ambient Jacobian, then we compute
+        # f \circ g, where g:self \to B is an isogeny to a subvariety to its
+        # ambient Jacobian and f = B._isogeny_to_newform_abelian_variety()
+        if not self.is_subvariety_of_ambient_jacobian():
+            f = self.isogeny_to_subvariety()
+            B = f.codomain()
+            return B._isogeny_to_newform_abelian_variety() * f
+
         t, N = self.decomposition()[0].degen_t()
         A = self.ambient_variety()
         for i in range(len(self.groups())):
@@ -3808,9 +3816,8 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             NotImplementedError: only implemented when self.groups() is singleton and self.is_hecke_stable()
         """
         if not len(self.groups()) == 1 or not self.is_hecke_stable():
-            raise NotImplementedError(
-                'only implemented when self.groups() is '
-                'singleton and self.is_hecke_stable()')
+            raise NotImplementedError('only implemented when self.groups() is '
+                                      'singleton and self.is_hecke_stable()')
 
         # the subvariety of J isogenous to A is given by taking the
         # saturation of the defining lattice of A.
@@ -3856,8 +3863,6 @@ class ModularAbelianVariety_abstract(ParentWithBase):
 
             # return dual of the quotient map
             return q.complementary_isogeny()
-
-
 
     def _isogeny_to_product_of_powers(self):
         r"""
@@ -3929,6 +3934,76 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         H = self.Hom(dest)
         self._simple_power_product_isogeny = H(Morphism(H, mat))
         return self._simple_power_product_isogeny
+
+    def is_isogenous(self, other, both_maps=False):
+        r"""
+        Return whether self is isogenous to other.
+
+        This is currently only implemented when self and other are simple.
+
+        INPUT:
+
+        - ``other`` -- a modular abelian variety
+        - ``both_maps`` (default:False) -- a boolean determining whether to
+          also return isogenies to and from other.
+
+        OUTPUT:
+
+        - Either the tuple ``(bool, A_to_B, B_to_A)`` or just ``bool``, where
+            - ``bool`` - a boolean
+            - ``A_to_B`` - an isogeny from ``self`` to ``other``, or ``None``
+            - ``B_to_A`` - an isogeny from ``other`` to ``self``, or ``None``
+
+        EXAMPLES::
+
+            sage: A = J0(29)
+            sage: B, _ = A / A.cuspidal_subgroup()
+            sage: bool, A_to_B, B_to_A = A.is_isogenous(B, both_maps=True)
+            sage: bool
+            True
+            sage: A_to_B
+            Abelian variety morphism:
+              From: Abelian variety factor of dimension 2 of J0(29)
+              To:   Abelian variety J0(29) of dimension 2
+            sage: B_to_A
+            Abelian variety morphism:
+              From: Abelian variety J0(29) of dimension 2
+              To:   Abelian variety factor of dimension 2 of J0(29)
+            sage: A_to_B.is_isogeny() and B_to_A.is_isogeny()
+            True
+        """
+        A = self
+        B = other
+
+        if not is_ModularAbelianVariety(other):
+            raise TypeError("other must be a modular abelian variety")
+
+        if not (A.is_simple() and B.is_simple()):
+            raise NotImplementedError(
+                "only implemented for simple abelian varieties")
+
+        if A.groups() != B.groups():
+            # The issue here is that the stuff below probably won't make any
+            # sense at all if we don't know that the two newform abelian
+            # varieties $A_f$ are identical.
+            raise NotImplementedError("only implemented when self and other "
+                                      "are in same ambient Jacobian")
+
+        if (A.newform_level() != B.newform_level()) or \
+           (A.isogeny_number() != B.isogeny_number()):
+            if both_maps:
+                return False, None, None
+            else:
+                return False
+        else:
+            if both_maps:
+                A_to_Af = A._isogeny_to_newform_abelian_variety()
+                B_to_Af = B._isogeny_to_newform_abelian_variety()
+                A_to_B = A_to_Af.complementary_isogeny() * B_to_Af
+                B_to_A = A_to_B.complementary_isogeny()
+                return True, A_to_B, B_to_A
+            else:
+                return True
 
     def complement(self, A=None):
         """
