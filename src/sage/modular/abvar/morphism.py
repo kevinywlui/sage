@@ -130,6 +130,29 @@ class Morphism_abstract(sage.modules.matrix_morphism.MatrixMorphism_abstract):
         M = self.matrix()
         return M.nrows() == M.ncols() == M.rank()
 
+    def degree(self):
+        r"""
+        Return the degree of self when self is an isogeny.
+
+        EXAMPLES::
+
+            sage: J = J0(23)
+            sage: C = J.cuspidal_subgroup(); C.order()
+            11
+            sage: _, phi = J / C; phi.degree()
+            11
+
+            sage: J = J0(39)
+            sage: T = J.hecke_operator(19)
+            sage: T.degree()
+            Traceback (most recent call last):
+            ...
+            ValueError: self must be an isogeny
+        """
+        if not self.is_isogeny():
+            raise ValueError("self must be an isogeny")
+        return (self * self.complementary_isogeny()).matrix()[0][0]
+
     def is_identity(self):
         r"""
         Return True if this morphism is the identity map.
