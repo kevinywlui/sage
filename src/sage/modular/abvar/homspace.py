@@ -1044,6 +1044,47 @@ class EndomorphismSubring(Homspace, Ring):
         self.__hecke_algebra_image = EndomorphismSubring(A, V.basis())
         return self.__hecke_algebra_image
 
+    def isomorphic_order(self, both_maps=True):
+        r"""
+        Return an order an number field isomorphic to self. If ``both_maps`` is
+        ``True``, then also return isomorphisms to and from that order.
+
+        INPUT:
+            - ``both_maps`` -- (default: True) a boolean determining whether
+              to returns both maps.
+
+        OUTPUT:
+            - the tuple ``(O, O_to_E, E_to_O)`` or just ``O``, where
+                - ``O`` is an order isomorphic to self
+                - ``O_to_E`` is an isomorphism from the order to self.
+                - ``E_to_O`` is an isomorphism from self to the order.
+
+        EXAMPLES::
+
+            sage: J = J0(23)
+            sage: E = J.endomorphism_ring()
+            sage: O, O_to_E, E_to_O = E.isomorphic_order()
+            sage: O.is_maximal()
+            True
+            sage: all(O_to_E(E_to_O(x)) == x for x in E.gens())
+            True
+            sage: all(E_to_O(O_to_E(x)) == x for x in O.gens())
+            True
+        """
+        E = self
+        EA = self.endomorphism_algebra()
+        K, K_to_EA, EA_to_K = EA.isomorphic_field()
+        O = K.order([EA_to_K(x) for x in E.gens()])
+        if both_maps:
+            im_K_to_EA = [K_to_EA(x) for x in O.gens()]
+            O_to_E = O.hom(im_K_to_EA, check=False)
+
+            im_EA_to_K = [EA_to_K(x) for x in E.gens()]
+            E_to_O = E.hom(im_EA_to_K, check=False)
+            return O, O_to_E, E_to_O
+        else:
+            return O
+
     def endomorphism_algebra(self):
         r"""
         Return the endomorphism algebra obtained by tensoring with QQ.

@@ -1913,7 +1913,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
 
     def endomorphism_algebra(self):
         r"""
-        Return the endomorphism algebra of self obtained by base extending the 
+        Return the endomorphism algebra of self obtained by tensoring the
         endomorphism ring by $\QQ$.
 
         OUTPUT: the endomorphism algebra of self.
@@ -1923,9 +1923,9 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         except AttributeError:
             pass
         from . import endomorphism_algebra
-        self.__endomorphism_ring = endomorphism_algebra. \
+        self.__endomorphism_algebra = endomorphism_algebra. \
             EndomorphismAlgebra(self.endomorphism_ring())
-        return self.__endomorphism_ring
+        return self.__endomorphism_algebra
 
     def sturm_bound(self):
         r"""

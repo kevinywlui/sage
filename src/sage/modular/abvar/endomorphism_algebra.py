@@ -2,29 +2,29 @@ r"""
 Space of algebras obtained by tensoring an endomorphism ring of a modular
 abelian variety by QQ.
 """
-from sage.categories.homset import HomsetWithBase
-from sage.modules.matrix_morphism import MatrixMorphism
 from sage.modules.free_module_element import vector
 from sage.rings.ring import Ring
 from sage.structure.element import RingElement
 from sage.rings.all import QQ, ZZ
 from sage.rings.number_field.number_field import NumberField
-from sage.structure.unique_representation import UniqueRepresentation
 from sage.matrix.constructor import matrix
 
 
-class Morphism(MatrixMorphism, RingElement):
+class Morphism(RingElement):
     r"""
     Morphisms in the isogeny category of modular abelian varieties.
     """
 
-    def __init__(self, parent, A):
-        MatrixMorphism.__init__(self, parent, A)
+    def __init__(self, parent, matrix):
+        self._matrix = matrix
         RingElement.__init__(self, parent)
         self._parent = parent
 
     def parent(self):
         return self._parent
+
+    def matrix(self):
+        return self._matrix
 
     def _im_gens_(self, codomain, im_gens):
         r"""
@@ -38,6 +38,10 @@ class Morphism(MatrixMorphism, RingElement):
         Bs = self.parent().gens()
         coeffs = self._linear_combination_coefficients(Bs)
         return sum(x * y for x, y in zip(coeffs, im_gens))
+
+    def __repr__(self):
+        return "Element of {} given by \n{}".format(self.parent(),
+                                                    self.matrix())
 
     def _linear_combination_coefficients(self, Bs):
         r"""
@@ -55,14 +59,41 @@ class Morphism(MatrixMorphism, RingElement):
         Bmatrix = matrix(QQ, [b.list() for b in Bs])
         return Bmatrix.solve_left(vector(self.list()))
 
+    def matrix_space(self):
+        return self.parent().matrix_space()
+
     def list(self):
         r"""
         Return a list of elements in the matrix of self.
         """
         return self.matrix().list()
 
+    def __mul__(self, other):
+        M = self.matrix_space()
+        try:
+            return self.parent()(self.matrix() * M(other))
+        except:
+            pass
+        return self.parent()(self.matrix() * other.matrix())
 
-class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
+    def __add__(self, other):
+        M = self.matrix_space()
+        try:
+            return self.parent()(self.matrix() + M(other))
+        except:
+            pass
+        return self.parent()(self.matrix() + other.matrix())
+
+    def __eq__(self, other):
+        M = self.matrix_space()
+        try:
+            return self.matrix() == M(other)
+        except:
+            pass
+        return self.matrix() == other.matrix()
+
+
+class EndomorphismAlgebra(Ring):
     r"""
     Class of a algebras obtained by tensoring a endomorphism ring by QQ.
     """
@@ -82,7 +113,6 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         # Remark: Ring.__init__ will automatically form the join
         # of the category of rings and of homset_cat
         Ring.__init__(self, A.base_ring(), category=homset_cat.Endsets())
-        HomsetWithBase.__init__(self, A, A, category=homset_cat)
 
     def _repr_(self):
         return "Endomorphism ALGEBRA of {}".format(self.abelian_variety())
@@ -93,16 +123,16 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         construct from matrices or rationals.
         """
         M = self.matrix_space()
-        if x in self.endomorphism_ring():
+        if x in M:
+            return self.element_class(self, M(x))
+        elif x in self.endomorphism_ring():
             return self.element_class(self, M(x.matrix()))
         elif isinstance(x, Morphism):
             return self.element_class(self, M(x.matrix()))
-
         try:
             return self.element_class(self, M(x))
         except TypeError:
             pass
-
         raise ValueError('x must be either a Morphism'
                          ' or a matrix of the suitable size')
 
@@ -161,7 +191,7 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
         variety.
         """
         M = self.matrix_space()
-        if M._coerce_map_from_(S):
+        if M.coerce_map_from(S):
             return True
         elif S == self:
             return True
@@ -253,7 +283,7 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
                                     [self(phi**i) for i in range(1, d)])
         return self._a_power_basis
 
-    def maps_to_field(self, check=False):
+    def isomorphic_field(self, both_maps=True, check=True):
         r"""
         Return maps to and from the endomorphism algebra as a number field when
         self is a field.
@@ -263,23 +293,25 @@ class EndomorphismAlgebra(UniqueRepresentation, HomsetWithBase, Ring):
 
         INPUT:
 
-           - ``check`` -- boolean determining whether to check that the
-             composition yields the identity.
+        - ``both_maps`` (default: True) -- boolean determining whether to
+          return isomorphisms to and from the field.
+        - ``check`` (default: True) -- boolean determining whether to check
+          that the composition yields the identity.
 
         OUTPUT:
 
-            - a tuple consisting of ``(K, K_to_EA, EA_to_K)``, where
-                - ``K`` is a number field isomorphic to self.
-                - ``K_to_EA`` is an isomorphism from ``K`` to self.
-                - ``EA_to_K`` is an isomorphism from self to ``K``.
+        - a tuple consisting of ``(K, K_to_EA, EA_to_K)``, where
+            - ``K`` is a number field isomorphic to self.
+            - ``K_to_EA`` is an isomorphism from ``K`` to self.
+            - ``EA_to_K`` is an isomorphism from self to ``K``.
 
         EXAMPLES::
 
-            sage: J = J0(23)
+            sage: J = J0(29)
             sage: A = J.endomorphism_algebra()
-            sage: K, K_to_EA, EA_to_K = A.maps_to_field()
+            sage: K, K_to_EA, EA_to_K = A.isomorphic_field()
             sage: K.disc()
-            5
+            8
             sage: alpha = K.gens()[0]
             sage: EA_to_K(K_to_EA(alpha)) == alpha
             True
