@@ -8,6 +8,7 @@ from sage.structure.element import RingElement
 from sage.rings.all import QQ, ZZ
 from sage.rings.number_field.number_field import NumberField
 from sage.matrix.constructor import matrix
+from sage.structure.unique_representation import UniqueRepresentation
 
 
 class Morphism(RingElement):
@@ -93,7 +94,7 @@ class Morphism(RingElement):
         return self.matrix() == other.matrix()
 
 
-class EndomorphismAlgebra(Ring):
+class EndomorphismAlgebra(Ring, UniqueRepresentation):
     r"""
     Class of a algebras obtained by tensoring a endomorphism ring by QQ.
     """
