@@ -3949,8 +3949,8 @@ class ModularAbelianVariety_abstract(ParentWithBase):
 
         OUTPUT:
 
-        - Either the tuple ``(bool, A_to_B, B_to_A)`` or just ``bool``, where
-            - ``bool`` - a boolean
+        - Either the tuple ``(bul, A_to_B, B_to_A)`` or just ``bul``, where
+            - ``bul`` - a boolean
             - ``A_to_B`` - an isogeny from ``self`` to ``other``, or ``None``
             - ``B_to_A`` - an isogeny from ``other`` to ``self``, or ``None``
 
@@ -3958,8 +3958,8 @@ class ModularAbelianVariety_abstract(ParentWithBase):
 
             sage: A = J0(29)
             sage: B, _ = A / A.cuspidal_subgroup()
-            sage: bool, A_to_B, B_to_A = A.is_isogenous(B, both_maps=True)
-            sage: bool
+            sage: bul, A_to_B, B_to_A = A.is_isogenous(B, both_maps=True)
+            sage: bul
             True
             sage: A_to_B
             Abelian variety morphism:
