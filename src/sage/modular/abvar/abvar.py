@@ -4074,7 +4074,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         Hf_gens = [f * x for x in Hom(A, B).gens()]
         Hf = EndomorphismSubring(A, Hf_gens)
 
-        deg_d = [x in Hf for x in lift_sols]
+        deg_d = [x for x in lift_sols if x in Hf]
         if not deg_d:
             if both_maps:
                 return False, None, None

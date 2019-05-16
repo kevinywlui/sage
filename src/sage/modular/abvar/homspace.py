@@ -191,6 +191,7 @@ import sage.rings.all
 
 from sage.rings.ring import Ring
 from sage.matrix.matrix_space import MatrixSpace
+from sage.modules.free_module_element import vector
 from sage.matrix.constructor import Matrix, identity_matrix
 from sage.structure.element import is_Matrix
 
@@ -468,6 +469,12 @@ class Homspace(HomsetWithBase):
             return self.matrix_space()(g.list())
         else:
             return self.matrix_space()(g)
+
+    def __contains__(self, x):
+        r"""
+        Determine whether x in self.
+        """
+        return (x.parent() == self) and vector(x.list()) in self.free_module()
 
     def free_module(self):
         r"""
