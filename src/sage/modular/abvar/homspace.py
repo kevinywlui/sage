@@ -1076,12 +1076,13 @@ class EndomorphismSubring(Homspace, Ring):
         K, K_to_EA, EA_to_K = EA.isomorphic_field()
         O = K.order([EA_to_K(x) for x in E.gens()])
         if both_maps:
-            im_K_to_EA = [K_to_EA(K(x)) for x in O.gens()]
-            O_to_E = O.hom(im_K_to_EA, check=False)
+            # im_K_to_EA = [K_to_EA(K(x)) for x in O.gens()]
+            # O_to_E = O.hom(im_K_to_EA, check=False)
 
-            im_EA_to_K = [O(EA_to_K(x)) for x in E.gens()]
-            E_to_O = E.hom(im_EA_to_K, check=False)
-            return O, O_to_E, E_to_O
+            # im_EA_to_K = [O(EA_to_K(x)) for x in E.gens()]
+            # E_to_O = E.hom(im_EA_to_K, check=False)
+            # return O, O_to_E, E_to_O
+            return O, K_to_EA, EA_to_K
         else:
             return O
 

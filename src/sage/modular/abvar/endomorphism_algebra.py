@@ -38,7 +38,7 @@ class Morphism(RingElement):
         """
         Bs = self.parent().gens()
         coeffs = self._linear_combination_coefficients(Bs)
-        return sum(x * y for x, y in zip(coeffs, im_gens))
+        return codomain(sum(x * y for x, y in zip(coeffs, im_gens)))
 
     def __repr__(self):
         return "Element of {} given by \n{}".format(self.parent(),
