@@ -4052,11 +4052,6 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         E = A.endomorphism_ring()
         EA = A.endomorphism_algebra()
 
-        O = E.isomorphic_order(both_maps=False)
-        if not O.is_maximal():
-            raise NotImplementedError(
-                "not implemented because norm equations are"
-                " only implemented in the maximal order case")
         K, K_to_EA, _ = EA.isomorphic_field(both_maps=True)
         K_pari = K.pari_bnf(proof=proof)
         norm_sols_pari = K_pari.bnfisintnorm(d.sqrt())
@@ -4065,6 +4060,12 @@ class ModularAbelianVariety_abstract(ParentWithBase):
                 return False, None, None
             else:
                 return False
+
+        O = E.isomorphic_order(both_maps=False)
+        if not O.is_maximal():
+            raise NotImplementedError(
+                "not implemented because norm equations are"
+                " only implemented in the maximal order case")
 
         norm_sols = [K(x) for x in norm_sols_pari]
         lift_sols = [E(K_to_EA(x)) for x in norm_sols]
