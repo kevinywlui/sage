@@ -33,6 +33,7 @@ from __future__ import absolute_import
 # ****************************************************************************
 
 from sage.categories.all import ModularAbelianVarieties
+from sage.categories.homset import Hom
 from sage.structure.sequence import Sequence, Sequence_generic
 from sage.structure.richcmp import (richcmp_method, richcmp_not_equal,
                                     rich_to_bool)
@@ -4001,6 +4002,88 @@ class ModularAbelianVariety_abstract(ParentWithBase):
                 B_to_Af = B._isogeny_to_newform_abelian_variety()
                 A_to_B = B_to_Af.complementary_isogeny() * A_to_Af
                 B_to_A = A_to_B.complementary_isogeny()
+                return True, A_to_B, B_to_A
+            else:
+                return True
+
+    def is_isomorphic(self, other, both_maps=False, proof=True):
+        r"""
+        Return whether self is isomorphic to other.
+
+        This is currently only implemented when self and other are simple.
+
+        INPUT:
+
+        - ``other`` -- a modular abelian variety
+        - ``both_maps`` (default:False) -- a boolean determining whether to
+          also return isogenies to and from other.
+        - ``proof`` (default:True) -- a boolean determining whether to assume
+          the GRH.
+
+        OUTPUT:
+
+        - Either the tuple ``(bul, A_to_B, B_to_A)`` or just ``bul``, where
+            - ``bul`` - a boolean
+            - ``A_to_B`` - an isomorphism from ``self`` to ``other``, or ``None``
+            - ``B_to_A`` - an isomorphism from ``other`` to ``self``, or ``None``
+        """
+        A = self
+        B = other
+
+        if not is_ModularAbelianVariety(other):
+            raise TypeError("other must be a modular abelian variety")
+
+        if not (A.is_simple() and B.is_simple()):
+            raise NotImplementedError(
+                "only implemented for simple abelian varieties")
+
+        if A.groups() != B.groups():
+            raise NotImplementedError("only implemented when self and other "
+                                      "are in same ambient Jacobian")
+
+        b, _, f = A.is_isogenous(B, both_maps=True)
+        d = f.degree()
+        if not d.is_square():
+            if both_maps:
+                return False, None, None
+            else:
+                return False
+
+        E = A.endomorphism_ring()
+        EA = A.endomorphism_algebra()
+
+        O = E.isomorphic_order(both_maps=False)
+        if not O.is_maximal():
+            raise NotImplementedError(
+                "not implemented because norm equations are"
+                " only implemented in the maximal order case")
+        K, K_to_EA, _ = EA.isomorphic_field(both_maps=True)
+        K_pari = K.pari_bnf(proof=proof)
+        norm_sols_pari = K_pari.bnfisintnorm(d.sqrt())
+        if not norm_sols_pari:
+            if both_maps:
+                return False, None, None
+            else:
+                return False
+
+        norm_sols = [K(x) for x in norm_sols_pari]
+        lift_sols = [E(K_to_EA(x)) for x in norm_sols]
+
+        from sage.modular.abvar.homspace import EndomorphismSubring
+        Hf_gens = [f * x for x in Hom(A, B).gens()]
+        Hf = EndomorphismSubring(A, Hf_gens)
+
+        deg_d = [x in Hf for x in lift_sols]
+        if not deg_d:
+            if both_maps:
+                return False, None, None
+            else:
+                return False
+        else:
+            if both_maps:
+                x = deg_d[0]
+                A_to_B = E(f.matrix().inverse() * x.matrix())
+                B_to_A = A_to_B.inverse()
                 return True, A_to_B, B_to_A
             else:
                 return True
