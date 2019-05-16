@@ -320,10 +320,31 @@ class EndomorphismAlgebra(Ring, UniqueRepresentation):
             True
             sage: K_to_EA(EA_to_K(0)) == 0
             True
+
+            sage: J = J0(11); J.dimension()
+            1
+            sage: J.endomorphism_algebra().isomorphic_field()
+            (Number Field in alpha with defining polynomial x - 1, Ring morphism:
+               From: Number Field in alpha with defining polynomial x - 1
+               To:   Endomorphism ALGEBRA of Abelian variety J0(11) of dimension 1
+               Defn: 1 |--> Element of Endomorphism ALGEBRA of Abelian variety J0(11) of dimension 1 given by
+                     [1 0]
+                     [0 1], Ring morphism:
+               From: Endomorphism ALGEBRA of Abelian variety J0(11) of dimension 1
+               To:   Number Field in alpha with defining polynomial x - 1
+               Defn: Element of Endomorphism ALGEBRA of Abelian variety J0(11) of dimension 1 given by
+                     [1 0]
+                     [0 1] |--> 1)
         """
+        if not self.is_field():
+            raise ValueError("self must be a field")
+
         power_basis = self.power_basis()
 
-        phi = power_basis[1]
+        if self.abelian_variety().dimension() == 1:
+            phi = power_basis[0]
+        else:
+            phi = power_basis[1]
         f = phi.matrix().minpoly()
 
         K = NumberField(f, names='alpha')
