@@ -3963,12 +3963,12 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             True
             sage: A_to_B
             Abelian variety morphism:
-              From: Abelian variety factor of dimension 2 of J0(29)
-              To:   Abelian variety J0(29) of dimension 2
-            sage: B_to_A
-            Abelian variety morphism:
               From: Abelian variety J0(29) of dimension 2
               To:   Abelian variety factor of dimension 2 of J0(29)
+            sage: B_to_A
+            Abelian variety morphism:
+              From: Abelian variety factor of dimension 2 of J0(29)
+              To:   Abelian variety J0(29) of dimension 2
             sage: A_to_B.is_isogeny() and B_to_A.is_isogeny()
             True
         """
@@ -3999,7 +3999,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             if both_maps:
                 A_to_Af = A._isogeny_to_newform_abelian_variety()
                 B_to_Af = B._isogeny_to_newform_abelian_variety()
-                A_to_B = A_to_Af.complementary_isogeny() * B_to_Af
+                A_to_B = B_to_Af.complementary_isogeny() * A_to_Af
                 B_to_A = A_to_B.complementary_isogeny()
                 return True, A_to_B, B_to_A
             else:
