@@ -301,10 +301,10 @@ class EndomorphismAlgebra(Ring, UniqueRepresentation):
 
         OUTPUT:
 
-        - a tuple consisting of ``(K, K_to_EA, EA_to_K)``, where
+        - a tuple consisting of ``(K, K_to_EA, EA_to_K)`` or just ``K``, where
             - ``K`` is a number field isomorphic to self.
-            - ``K_to_EA`` is an isomorphism from ``K`` to self.
-            - ``EA_to_K`` is an isomorphism from self to ``K``.
+            - ``K_to_EA`` is an isomorphism from ``K`` to self, or ``None``.
+            - ``EA_to_K`` is an isomorphism from self to ``K``, or ``None``.
 
         EXAMPLES::
 
@@ -369,7 +369,10 @@ class EndomorphismAlgebra(Ring, UniqueRepresentation):
             assert (K_to_EA(EA_to_K(x)) == x for x in self.gens())
             assert (EA_to_K(K_to_EA(alpha)) == alpha)
 
-        return K, K_to_EA, EA_to_K
+        if both_maps:
+            return K, K_to_EA, EA_to_K
+        else:
+            return K
 
     def free_module(self):
         r"""
