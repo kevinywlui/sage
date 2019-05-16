@@ -154,7 +154,7 @@ class Morphism_abstract(sage.modules.matrix_morphism.MatrixMorphism_abstract):
         """
         if not self.is_isogeny():
             raise ValueError("self must be an isogeny")
-        return (self * self.complementary_isogeny()).matrix()[0][0]
+        return self.kernel()[0].order()
 
     def is_identity(self):
         r"""
