@@ -4006,7 +4006,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             else:
                 return True
 
-    def is_isomorphic(self, other, both_maps=False, proof=True):
+    def is_isomorphic(self, other, isogeny=None, both_maps=False, proof=True):
         r"""
         Return whether self is isomorphic to other.
 
@@ -4017,6 +4017,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         - ``other`` -- a modular abelian variety
         - ``both_maps`` (default:False) -- a boolean determining whether to
           also return isogenies to and from other.
+        - ``isogeny`` (default:None) -- an isogeny from self to other.
         - ``proof`` (default:True) -- a boolean determining whether to assume
           the GRH.
 
@@ -4041,9 +4042,13 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             raise NotImplementedError("only implemented when self and other "
                                       "are in same ambient Jacobian")
 
-        b, _, f = A.is_isogenous(B, both_maps=True)
+        if isogeny is None:
+            b, _, f = A.is_isogenous(B, both_maps=True)
+        else:
+            b = True
+            f = isogeny.complementary_isogeny()
         d = f.degree()
-        if not d.is_square():
+        if not (d.is_square() and b):
             if both_maps:
                 return False, None, None
             else:
