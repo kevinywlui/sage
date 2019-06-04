@@ -1246,6 +1246,8 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             Finite subgroup with invariants [10, 10] over QQ of Abelian variety J0(33) of dimension 3
             sage: J0(11).direct_product(J1(13))
             Abelian variety J0(11) x J1(13) of dimension 3
+
+        Set ``map_to_quotient=False`` to
         """
         if map_to_quotient:
             return self / other
