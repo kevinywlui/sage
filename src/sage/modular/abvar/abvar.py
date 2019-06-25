@@ -1247,7 +1247,11 @@ class ModularAbelianVariety_abstract(ParentWithBase):
             sage: J0(11).direct_product(J1(13))
             Abelian variety J0(11) x J1(13) of dimension 3
 
-        Set ``map_to_quotient=False`` to
+        Set ``map_to_quotient=False`` to only return the quotient. ::
+
+            sage: J = J0(23)
+            sage: J.quotient(J.cuspidal_subgroup(), map_to_quotient=False)
+            Abelian variety factor of dimension 2 of J0(23)
         """
         if map_to_quotient:
             return self / other
