@@ -69,29 +69,20 @@ class Morphism(RingElement):
         """
         return self.matrix().list()
 
-    def __mul__(self, other):
-        M = self.matrix_space()
-        try:
-            return self.parent()(self.matrix() * M(other))
-        except:
-            pass
-        return self.parent()(self.matrix() * other.matrix())
+    def _add_(self, other):
+        P = self.parent()
+        return P(self.matrix() + other.matrix())
 
-    def __add__(self, other):
-        M = self.matrix_space()
-        try:
-            return self.parent()(self.matrix() + M(other))
-        except:
-            pass
-        return self.parent()(self.matrix() + other.matrix())
+    def _mul_(self, other):
+        P = self.parent()
+        return P(self.matrix() + other.matrix())
 
-    def __eq__(self, other):
-        M = self.matrix_space()
-        try:
-            return self.matrix() == M(other)
-        except:
-            pass
+    def _eq_(self, other):
         return self.matrix() == other.matrix()
+
+    def _richcmp_(self, other, op):
+        from sage.structure.richcmp import richcmp
+        return richcmp(self.matrix(), other.matrix(), op)
 
 
 class EndomorphismAlgebra(Ring, UniqueRepresentation):
