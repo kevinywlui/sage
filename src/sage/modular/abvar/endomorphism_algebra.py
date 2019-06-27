@@ -75,7 +75,7 @@ class Morphism(RingElement):
 
     def _mul_(self, other):
         P = self.parent()
-        return P(self.matrix() + other.matrix())
+        return P(self.matrix() * other.matrix())
 
     def _eq_(self, other):
         return self.matrix() == other.matrix()
@@ -117,16 +117,14 @@ class EndomorphismAlgebra(Ring, UniqueRepresentation):
         M = self.matrix_space()
         if x in M:
             return self.element_class(self, M(x))
-        elif x in self.endomorphism_ring():
-            return self.element_class(self, M(x.matrix()))
-        elif isinstance(x, Morphism):
-            return self.element_class(self, M(x.matrix()))
+        elif hasattr(x, 'matrix'):
+            return self.element_class(self, x.matrix())
         try:
-            return self.element_class(self, M(x))
+            y = M(x)
+            return self.element_class(self, y)
         except TypeError:
             pass
-        raise ValueError('x must be either a Morphism'
-                         ' or a matrix of the suitable size')
+        return self.element_class(self, x)
 
     def an_element(self):
         r"""
