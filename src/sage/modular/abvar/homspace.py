@@ -181,17 +181,20 @@ from copy import copy
 
 from sage.categories.homset import HomsetWithBase
 from sage.structure.all import parent
+from sage.matrix.constructor import matrix
 from sage.misc.lazy_attribute import lazy_attribute
 
 from . import morphism
 
 import sage.rings.integer_ring
 import sage.rings.all
+from sage.rings.rational_field import QQ
 
 from sage.rings.ring import Ring
 from sage.matrix.matrix_space import MatrixSpace
 from sage.matrix.constructor import Matrix, identity_matrix
 from sage.structure.element import is_Matrix
+from sage.rings.number_field.number_field import NumberField
 
 ZZ = sage.rings.integer_ring.ZZ
 
@@ -232,6 +235,18 @@ class Homspace(HomsetWithBase):
             raise TypeError("codomain must be a modular abelian variety")
         self._gens = None
         HomsetWithBase.__init__(self, domain, codomain, category=cat)
+
+    def random_element(self):
+        r"""
+        Return a random element by obtaining a random element of the underlying
+        free module.
+
+        Output:
+            - A morphism in this homset.
+        """
+        F = self.free_module()
+        M = self.matrix_space()
+        return self(M(F.random_element()))
 
     def identity(self):
         """
@@ -1019,3 +1034,41 @@ class EndomorphismSubring(Homspace, Ring):
 
         self.__hecke_algebra_image = EndomorphismSubring(A, V.basis())
         return self.__hecke_algebra_image
+
+    def isomorphic_order(self):
+        r"""
+        Return an order of a number field isomorphic to self when associated
+        abelian variety is simple.
+        """
+
+        A = self.abelian_variety()
+        d = A.dimension()
+
+        M = self.matrix_space()
+
+        # MQ is isomorphic to a number field.
+        MQ = M.change_ring(QQ)
+
+        # Find number field
+
+        # Find primitive element
+        for i in range(100):
+            phi = self.random_element()
+            f = phi.matrix().minpoly()
+            if f.degree() == d:
+                break
+        K = NumberField(f, names='alpha')
+        alpha = K.gens()[0]
+
+        phiMQ = MQ(phi.matrix())
+        K_to_MQ = K.hom([phiMQ])
+
+        # we know phiMQ**i -> alpha**i so write elements of write the MQ.
+        P = matrix([(phiMQ**i).list() for i in range(d)])
+        G = matrix([g.list() for g in self.gens()])
+
+        C = P.solve_left(G)
+        MQ_to_K = self.hom(
+            [sum(C[i][j] * alpha**j for j in range(d)) for i in range(d)],
+            check=False)
+        return K, K_to_MQ, MQ_to_K

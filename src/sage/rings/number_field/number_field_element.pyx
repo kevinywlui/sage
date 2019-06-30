@@ -4978,6 +4978,25 @@ cdef class OrderElement_absolute(NumberFieldElement_absolute):
         """
         return self._parent.number_field()(NumberFieldElement_absolute.__invert__(self))
 
+    def _im_gens_(self, codomain, im_gens):
+        """
+        Return the image of self given the image of the generators.
+
+        This is used for computing morphisms coming out of an order.
+
+        EXAMPLES::
+
+            sage: TODO
+        """
+
+        # Turn this into a linear algebra problem by writing self as a linear
+        # combination of the generators.
+        self_v = self.vector()
+        Oh = self.parent()
+        Gs_v = self.free_module().basis_matrix()
+        coord = Gs_v.solve_left(self_v)
+        return sum(coord[i]*im_gens[i] for i in range(len(coord)))
+
 
 cdef class OrderElement_relative(NumberFieldElement_relative):
     """
