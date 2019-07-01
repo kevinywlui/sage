@@ -4038,6 +4038,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         else:
             b = True
             f = isogeny.complementary_isogeny()
+
         d = f.degree()
         if not (d.is_square() and b):
             if both_maps:
@@ -4046,25 +4047,26 @@ class ModularAbelianVariety_abstract(ParentWithBase):
                 return False
 
         E = A.endomorphism_ring()
-        EA = A.endomorphism_algebra()
+        Oh, E_to_Oh, Oh_to_E = E.isomorphic_order(both_maps=True)
 
-        K, K_to_EA, _ = EA.isomorphic_field(both_maps=True)
+        K = Oh.number_field()
         K_pari = K.pari_bnf(proof=proof)
+
         norm_sols_pari = K_pari.bnfisintnorm(d.sqrt())
+
         if not norm_sols_pari:
             if both_maps:
                 return False, None, None
             else:
                 return False
 
-        O = E.isomorphic_order(both_maps=False)
-        if not O.is_maximal():
+        if not Oh.is_maximal():
             raise NotImplementedError(
                 "not implemented because norm equations are"
                 " only implemented in the maximal order case")
 
         norm_sols = [K(x) for x in norm_sols_pari]
-        lift_sols = [E(K_to_EA(x)) for x in norm_sols]
+        lift_sols = [E(Oh_to_E(x)) for x in norm_sols]
 
         from sage.modular.abvar.homspace import EndomorphismSubring
         Hf_gens = [f * x for x in Hom(A, B).gens()]
