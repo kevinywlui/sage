@@ -54,7 +54,8 @@ from sage.rings.rational_field import QQ
 from sage.rings.real_double import RDF
 from sage.rings.complex_double import CDF
 from sage.categories.morphism cimport Morphism
-from sage.rings.number_field.number_field_element import _inverse_mod_generic
+from sage.rings.number_field.number_field_element import (_inverse_mod_generic,
+                                                          _im_gens_order)
 from sage.rings.real_mpfi cimport RealIntervalField_class
 from sage.rings.complex_interval cimport ComplexIntervalFieldElement
 from sage.rings.real_arb cimport RealBall
@@ -2509,6 +2510,14 @@ cdef class OrderElement_quadratic(NumberFieldElement_quadratic):
         """
         R = self.parent()
         return R(_inverse_mod_generic(self, I))
+
+    def _im_gens_(self, codomain, im_gens):
+        """
+        Return the image of self given the image of the generators.
+
+        This is used for computing morphisms coming out of an order.
+        """
+        return _im_gens_order(self, codomain, im_gens)
 
 
 cdef class Z_to_quadratic_field_element(Morphism):

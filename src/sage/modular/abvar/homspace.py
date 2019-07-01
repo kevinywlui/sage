@@ -1035,7 +1035,7 @@ class EndomorphismSubring(Homspace, Ring):
         self.__hecke_algebra_image = EndomorphismSubring(A, V.basis())
         return self.__hecke_algebra_image
 
-    def isomorphic_order(self):
+    def isomorphic_order(self, both_maps=False):
         r"""
         Return an order of a number field isomorphic to self when associated
         abelian variety is simple.
@@ -1046,10 +1046,9 @@ class EndomorphismSubring(Homspace, Ring):
 
         M = self.matrix_space()
 
-        # MQ is isomorphic to a number field.
+        # MQ is isomorphic to the desired number field K. We will first find
+        # isomorphisms K_to_MQ and MQ_to_K.
         MQ = M.change_ring(QQ)
-
-        # Find number field
 
         # Find primitive element
         for i in range(100):
@@ -1065,10 +1064,16 @@ class EndomorphismSubring(Homspace, Ring):
 
         # we know phiMQ**i -> alpha**i so write elements of write the MQ.
         P = matrix([(phiMQ**i).list() for i in range(d)])
-        G = matrix([g.list() for g in self.gens()])
-
+        G = matrix([g.matrix().list() for g in self.gens()])
         C = P.solve_left(G)
-        MQ_to_K = self.hom(
-            [sum(C[i][j] * alpha**j for j in range(d)) for i in range(d)],
-            check=False)
-        return K, K_to_MQ, MQ_to_K
+
+        im_gens = [sum(C[i][j] * alpha**j for j in range(d)) for i in range(d)]
+        # Now we restrict to orders.
+
+        Oh = K.order(im_gens)
+        if not both_maps:
+            return Oh
+
+        M_to_Oh = self.hom([Oh(x) for x in im_gens], check=False)
+        Oh_to_M = Oh.hom([self(K_to_MQ(x)) for x in Oh.gens()], check=False)
+        return Oh, M_to_Oh, Oh_to_M

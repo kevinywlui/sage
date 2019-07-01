@@ -182,6 +182,12 @@ def _inverse_mod_generic(elt, I):
             y += v[j] * sum([b[j,i+n] * B[i] for i in xrange(n)])
     return I.small_residue(y)
 
+def _im_gens_order(elt, codomain, im_gens):
+    elt_v = elt.vector()
+    Oh = elt.parent()
+    Gs_v = Oh.free_module().basis_matrix()
+    coord = Gs_v.solve_left(elt_v)
+    return sum(coord[i] * im_gens[i] for i in range(len(coord)))
 
 cdef class NumberFieldElement(FieldElement):
     """
@@ -4991,11 +4997,7 @@ cdef class OrderElement_absolute(NumberFieldElement_absolute):
 
         # Turn this into a linear algebra problem by writing self as a linear
         # combination of the generators.
-        self_v = self.vector()
-        Oh = self.parent()
-        Gs_v = self.free_module().basis_matrix()
-        coord = Gs_v.solve_left(self_v)
-        return sum(coord[i]*im_gens[i] for i in range(len(coord)))
+        return _im_gens_order(self, codomain, im_gens)
 
 
 cdef class OrderElement_relative(NumberFieldElement_relative):
