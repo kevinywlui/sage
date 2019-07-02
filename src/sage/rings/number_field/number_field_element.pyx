@@ -186,7 +186,7 @@ def _im_gens_order(elt, codomain, im_gens):
     elt_v = elt.vector()
     Oh = elt.parent()
     Gs_v = Oh.free_module().basis_matrix()
-    coord = Gs_v.solve_left(elt_v)
+    coord = Gs_v.solve_left(elt_v).change_ring(ZZ)
     return sum(coord[i] * im_gens[i] for i in range(len(coord)))
 
 cdef class NumberFieldElement(FieldElement):
