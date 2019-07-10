@@ -4069,7 +4069,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         lift_sols = [E(Oh_to_E(x)) for x in norm_sols]
 
         from sage.modular.abvar.homspace import EndomorphismSubring
-        Hf_gens = [f.precompose(x) for x in Hom(A, B).gens()]
+        Hf_gens = [f * x for x in Hom(A, B).gens()]
         Hf = EndomorphismSubring(A, Hf_gens)
 
         deg_d = [y for y in lift_sols if y in Hf]
@@ -4081,7 +4081,7 @@ class ModularAbelianVariety_abstract(ParentWithBase):
         else:
             if both_maps:
                 y = deg_d[0]
-                A_to_B = E(y.matrix() * f.matrix().inverse())
+                A_to_B = Hom(A, B)(y.matrix() * f.matrix().inverse())
                 B_to_A = A_to_B.inverse()
                 return True, A_to_B, B_to_A
             else:
