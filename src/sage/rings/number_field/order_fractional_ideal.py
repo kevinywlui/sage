@@ -174,14 +174,17 @@ class OrderFractionalIdeal(Ideal_generic):
         """
         return basis_to_module(self.basis(), self.number_field())
 
-    # def prime_factors(self):
-    #     O = self.order()
-    #     OK = O.integral_closure()
+    def prime_factors(self):
+        r"""
+        TODO: fill in
+        """
+        O = self.order()
+        OK = O.integral_closure()
 
-    #     aOK = OK.ideal(self.gens())
-    #     above = aOK.prime_factors()
+        aOK = OK.ideal(self.gens())
+        above = aOK.prime_factors()
 
-    #     return [O.intersection(p) for p in above]
+        return [O.intersection(p) for p in above]
 
 
 def basis_to_module(B, K):
